@@ -13,33 +13,60 @@
     .nav a { font-size: 14px; color: #666; text-decoration: none; }
     .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
 
-    .wrap { max-width: 420px; margin: 0 auto; padding: 12px;
-            display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
 
-    .tabs { display: flex; width: 100%; border-radius: 14px; overflow: hidden;
-            box-shadow: 0 2px 8px rgba(74,108,247,.10); }
-    .tab { flex: 1; padding: 12px 8px; font-size: 15px; font-weight: bold;
-           border: none; cursor: pointer; background: #fff; color: #bbb;
-           -webkit-tap-highlight-color: transparent; }
-    .tab.on { background: #4a6cf7; color: #fff; }
+    /* Phase tabs */
+    .ptabs { display: flex; border-radius: 14px; overflow: hidden;
+             box-shadow: 0 2px 8px rgba(74,108,247,.10); }
+    .ptab { flex: 1; padding: 12px 8px; font-size: 15px; font-weight: bold;
+            border: none; cursor: pointer; background: #fff; color: #bbb;
+            -webkit-tap-highlight-color: transparent; transition: background .2s, color .2s; }
+    .ptab.on { background: #4a6cf7; color: #fff; }
+
+    /* Main area — stacks on mobile, side-by-side on wider screens */
+    .main { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+    @media (min-width: 560px) {
+      .main { flex-direction: row; align-items: flex-start; }
+      .panel { flex: 1; min-width: 0; }
+    }
 
     .cv-wrap { background: #fff; border-radius: 16px; padding: 12px;
-               box-shadow: 0 2px 10px rgba(74,108,247,.12); }
+               box-shadow: 0 2px 10px rgba(74,108,247,.12); flex-shrink: 0; }
     canvas { display: block; }
 
-    .eq-card { background: #fff; border-radius: 16px; padding: 16px 18px;
-               box-shadow: 0 2px 10px rgba(74,108,247,.12); width: 100%; text-align: center; }
-    .eq-line { display: flex; justify-content: center; align-items: baseline;
-               gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-    .en { font-size: 40px; font-weight: bold; line-height: 1; }
-    .eo { font-size: 30px; color: #ccc; }
-    .eq { font-size: 40px; font-weight: bold; color: #ccc; }
-    .desc { font-size: 16px; color: #555; line-height: 1.9; }
-    .desc b { font-size: 21px; }
+    .panel { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 
-    .btns { display: flex; gap: 10px; width: 100%; }
-    .btn { flex: 1; border: none; border-radius: 14px; font-size: 17px; font-weight: bold;
-           padding: 14px 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    /* Grouping toggle */
+    .gtabs { display: flex; gap: 8px; }
+    .gtab { flex: 1; padding: 10px 8px; font-size: 14px; font-weight: bold;
+            border: 2px solid #dde3ff; border-radius: 12px; cursor: pointer;
+            background: #fff; color: #999; text-align: center; line-height: 1.5;
+            -webkit-tap-highlight-color: transparent; transition: all .15s; }
+    .gtab:active { opacity: .8; }
+    .gtab.on { border-color: #4a6cf7; background: #eef0ff; color: #4a6cf7; }
+
+    /* Discovery banner */
+    .disc { background: #fffbdd; border: 2px solid #ffd43b; border-radius: 12px;
+            padding: 10px 14px; font-size: 14px; color: #5a4300; text-align: center;
+            display: none; line-height: 1.7; }
+    .disc.on { display: block; }
+
+    /* Equation card */
+    .eq-card { background: #fff; border-radius: 16px; padding: 14px 16px;
+               box-shadow: 0 2px 10px rgba(74,108,247,.12); text-align: center; }
+    .eq-line { display: flex; justify-content: center; align-items: baseline;
+               gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+    .en  { font-size: 38px; font-weight: bold; line-height: 1; }
+    .eo  { font-size: 28px; color: #ccc; }
+    .eq  { font-size: 38px; font-weight: bold; color: #ccc; }
+    .desc { font-size: 15px; color: #555; line-height: 1.9; }
+    .desc b { font-size: 20px; }
+
+    /* Buttons */
+    .btns { display: flex; gap: 10px; }
+    .btn { flex: 1; border: none; border-radius: 14px; font-size: 16px; font-weight: bold;
+           padding: 13px 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .btn:active { opacity: .8; }
     .btn.pri { background: #4a6cf7; color: #fff; }
     .btn.sec { background: #e9ecef; color: #555; }
@@ -56,130 +83,152 @@
 </div>
 
 <div class="wrap">
-  <div class="tabs">
-    <button class="tab on" id="t0" onclick="goPhase(0)">✖ 乘法累積</button>
-    <button class="tab"    id="t1" onclick="goPhase(1)">➗ 除法分組</button>
+  <div class="ptabs">
+    <button class="ptab on" id="pt0" onclick="goPhase('mul')">✖ 乘法</button>
+    <button class="ptab"    id="pt1" onclick="goPhase('div')">➗ 除法</button>
   </div>
 
-  <div class="cv-wrap">
-    <canvas id="cvs" width="300" height="300"></canvas>
-  </div>
+  <div class="main">
+    <div class="cv-wrap">
+      <canvas id="cvs" width="300" height="300"></canvas>
+    </div>
 
-  <div class="eq-card">
-    <div class="eq-line" id="eqLine"></div>
-    <div class="desc"    id="desc"></div>
+    <div class="panel">
+      <div class="gtabs" id="gtabs"></div>
+      <div class="disc"  id="disc"></div>
+      <div class="eq-card">
+        <div class="eq-line" id="eqLine"></div>
+        <div class="desc"    id="desc"></div>
+      </div>
+      <div class="btns" id="btns"></div>
+    </div>
   </div>
-
-  <div class="btns" id="btns"></div>
 </div>
 
 <script>
   // ── Constants ─────────────────────────────────────────────
-  const ROWS = 7, COLS = 4, TOT = 28;
-  const ORC = '#e06b00';   // orange  = per-group (被乘數 4)
-  const OVC = '#7c3aed';   // purple  = group count (乘數/商 7)
-  const OTC = '#2f9e44';   // green   = total (積 28)
-  const GRAY = '#b0c0d8';  // unactivated dot colour
+  const TOT = 28;
+  const ORC = '#e06b00';   // orange = per-group / divisor (4)
+  const OVC = '#7c3aed';   // purple = group-count / quotient (7 or 4)
+  const OTC = '#2f9e44';   // green  = total (28)
+  const GRAY = '#aabbcc';  // dim colour for "used up" dots
 
-  // Canvas layout: grid left-of-centre to leave room for right-side labels
-  const CW = 300, CH = 300;
-  const CX = 128, CY = 150; // grid centre
-  const DR = 14, SP = 36;   // dot radius, spacing
+  // Layout per groupSize (= COLS = dots per row)
+  // cols=4 → 7 rows of 4;  cols=7 → 4 rows of 7
+  const LY = {
+    4: { rows: 7, cols: 4, dr: 14, sp: 36, cx: 128, cy: 150 },
+    7: { rows: 4, cols: 7, dr: 11, sp: 26, cx: 140, cy: 150 },
+  };
 
   const cvs = document.getElementById('cvs');
   const ctx  = cvs.getContext('2d');
+  const CW = 300, CH = 300;
 
-  // ── Helpers ───────────────────────────────────────────────
+  // ── State ─────────────────────────────────────────────────
+  let phase     = 'mul';  // 'mul' | 'div'
+  let groupSize = 4;      // 4 | 7  (columns = dots per group)
+  let step      = 0;      // rows shown (mul) or groups removed (div)
+  let animating = false, raf = null;
+  const mulDone = { 4: false, 7: false };  // commutativity discovery
+
+  function L()    { return LY[groupSize]; }
+  function ease(t){ return 1 - Math.pow(1 - Math.min(1, t), 2); }
+
   function gp(r, c) {
-    return { x: CX + (c - (COLS - 1) / 2) * SP,
-             y: CY + (r - (ROWS - 1) / 2) * SP };
+    const { cx, cy, sp, rows, cols } = L();
+    return { x: cx + (c - (cols - 1) / 2) * sp,
+             y: cy + (r - (rows - 1) / 2) * sp };
   }
-  function ease(t) { return 1 - Math.pow(1 - Math.min(1, t), 2); }
 
+  // ── Draw helpers ──────────────────────────────────────────
   function rowBg(r, color, a) {
-    const p0 = gp(r, 0), p1 = gp(r, COLS - 1);
+    const { cols, dr } = L();
+    const p0 = gp(r, 0), p1 = gp(r, cols - 1);
     ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.roundRect(p0.x - DR - 8, p0.y - DR - 6,
-                  (p1.x - p0.x) + (DR + 8) * 2, DR * 2 + 12, 10);
+    ctx.roundRect(p0.x - dr - 8, p0.y - dr - 6,
+                  (p1.x - p0.x) + (dr + 8) * 2, dr * 2 + 12, 10);
     ctx.fill(); ctx.restore();
   }
 
-  function drawDot(r, c, color, alpha, scale) {
+  function dot(r, c, color, alpha, scale) {
+    const { dr } = L();
     const p = gp(r, c);
     ctx.save(); ctx.globalAlpha = alpha;
     ctx.translate(p.x, p.y); ctx.scale(scale, scale);
-    ctx.beginPath(); ctx.arc(0, 0, DR, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(0, 0, dr, 0, Math.PI * 2);
     ctx.fillStyle = color; ctx.fill();
     ctx.restore();
   }
 
   function sideLabel(r, text, color, alpha) {
-    const p = gp(r, COLS - 1);
+    const { cols, dr } = L();
+    const p = gp(r, cols - 1);
     ctx.save(); ctx.globalAlpha = alpha;
-    ctx.fillStyle = color; ctx.font = 'bold 13px sans-serif';
+    ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, p.x + DR + 10, p.y);
+    ctx.fillText(text, p.x + dr + 8, p.y);
     ctx.restore();
   }
 
-  function lerpColor(c1, c2, t) {
+  function lerpC(c1, c2, t) {
     const h = s => parseInt(s, 16);
-    const r1 = h(c1.slice(1,3)), g1 = h(c1.slice(3,5)), b1 = h(c1.slice(5,7));
-    const r2 = h(c2.slice(1,3)), g2 = h(c2.slice(3,5)), b2 = h(c2.slice(5,7));
+    const r1=h(c1.slice(1,3)),g1=h(c1.slice(3,5)),b1=h(c1.slice(5,7));
+    const r2=h(c2.slice(1,3)),g2=h(c2.slice(3,5)),b2=h(c2.slice(5,7));
     return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
   }
 
-  // ── State ─────────────────────────────────────────────────
-  let phase = 0;   // 0 = multiplication, 1 = division
-  let step  = 0;   // rows shown (phase 0) or groups done (phase 1)
-  let animating = false, raf = null;
-
-  // ── Draw: multiplication ──────────────────────────────────
-  // animRow = -1 → static render; otherwise that row is animating with progress t
+  // ── Multiplication: rows appear one by one ─────────────────
+  // Dots: orange (ORC). Each row pops in L→R.
+  // Right label: =4, =8, =12 … (running total, green OTC)
   function drawMul(animRow, t) {
     ctx.clearRect(0, 0, CW, CH);
-    for (let r = 0; r < ROWS; r++) {
+    const { rows, cols } = L();
+    for (let r = 0; r < rows; r++) {
       const isNew = (r === animRow);
-      if (r >= step && !isNew) continue;   // not revealed yet
-
+      if (r >= step && !isNew) continue;
       const e = ease(t);
       rowBg(r, ORC, isNew ? e * 0.15 : 0.15);
-
-      for (let c = 0; c < COLS; c++) {
+      for (let c = 0; c < cols; c++) {
         let sc = 1;
         if (isNew) {
-          const lt = Math.max(0, (t - c / COLS * 0.35) / 0.65);
+          const lt = Math.max(0, (t - c / cols * 0.4) / 0.6);
           sc = ease(Math.min(1, lt));
         }
-        drawDot(r, c, ORC, 1, sc);
+        dot(r, c, ORC, 1, sc);
       }
-
-      // Running total label: =4, =8, =12 …
-      sideLabel(r, '=' + (r + 1) * COLS, OTC, isNew ? e : 1);
+      sideLabel(r, '=' + (r + 1) * cols, OTC, isNew ? e : 1);
     }
   }
 
-  // ── Draw: division ────────────────────────────────────────
+  // ── Division: all dots start bright green, dim one group per step ──
+  // Bright (remaining): green (OTC).
+  // Animating (being removed): green → gray, full → dim.
+  // Done (removed): gray, low opacity, with group label.
   function drawDiv(animRow, t) {
     ctx.clearRect(0, 0, CW, CH);
+    const { rows, cols } = L();
     const e = ease(t);
-    for (let r = 0; r < ROWS; r++) {
-      const done  = (r < step);
-      const isNew = (r === animRow);
+    for (let r = 0; r < rows; r++) {
+      const removed = (r < step);
+      const isNew   = (r === animRow);
 
-      if (done) {
-        rowBg(r, ORC, 0.13);
-        for (let c = 0; c < COLS; c++) drawDot(r, c, ORC, 1, 1);
-        sideLabel(r, '第' + (r + 1) + '組', ORC, 1);
+      if (removed) {
+        // Already taken away — dim gray
+        rowBg(r, GRAY, 0.07);
+        for (let c = 0; c < cols; c++) dot(r, c, GRAY, 0.30, 1);
+        sideLabel(r, '第' + (r + 1) + '組', GRAY, 0.55);
       } else if (isNew) {
-        rowBg(r, ORC, e * 0.13);
-        for (let c = 0; c < COLS; c++)
-          drawDot(r, c, lerpColor(GRAY, ORC, e), 0.4 + 0.6 * e, 1);
-        sideLabel(r, '第' + (r + 1) + '組', ORC, Math.max(0, (t - 0.5) * 2));
+        // Being taken — animate green → gray, opacity 1 → 0.30
+        const col  = lerpC(OTC, GRAY, e);
+        const alph = 1 - 0.70 * e;
+        rowBg(r, lerpC(OTC, GRAY, e), (1 - e) * 0.15 + e * 0.07);
+        for (let c = 0; c < cols; c++) dot(r, c, col, alph, 1);
+        sideLabel(r, '第' + (r + 1) + '組', lerpC(OTC, GRAY, e),
+                  Math.max(0, (t - 0.5) * 2) * 0.55);
       } else {
-        // not yet grouped — show faded grey
-        for (let c = 0; c < COLS; c++) drawDot(r, c, GRAY, 0.45, 1);
+        // Still in the pool — bright green
+        for (let c = 0; c < cols; c++) dot(r, c, OTC, 1, 1);
       }
     }
   }
@@ -198,82 +247,130 @@
     raf = requestAnimationFrame(tick);
   }
 
+  function staticDraw() {
+    phase === 'mul' ? drawMul(-1, 0) : drawDiv(-1, 0);
+  }
+
   // ── User actions ──────────────────────────────────────────
   function doStep() {
-    if (animating || step >= ROWS) return;
+    const { rows } = L();
+    if (animating || step >= rows) return;
     const cur = step; step++;
-    const df = phase === 0 ? drawMul : drawDiv;
+    const df = phase === 'mul' ? drawMul : drawDiv;
     startAnim(cur, df, () => {
-      phase === 0 ? drawMul(-1, 0) : drawDiv(-1, 0);
+      staticDraw();
+      if (phase === 'mul' && step >= rows) mulDone[groupSize] = true;
       updateUI();
     });
-    updateUI();   // disable button immediately
+    updateUI();
   }
 
   function doReplay() {
     if (raf) { cancelAnimationFrame(raf); raf = null; }
     step = 0; animating = false;
-    phase === 0 ? drawMul(-1, 0) : drawDiv(-1, 0);
-    updateUI();
+    staticDraw(); updateUI();
   }
 
   function goPhase(p) {
     if (raf) { cancelAnimationFrame(raf); raf = null; }
     phase = p; step = 0; animating = false;
-    document.getElementById('t0').classList.toggle('on', p === 0);
-    document.getElementById('t1').classList.toggle('on', p === 1);
-    p === 0 ? drawMul(-1, 0) : drawDiv(-1, 0);
-    updateUI();
+    document.getElementById('pt0').classList.toggle('on', p === 'mul');
+    document.getElementById('pt1').classList.toggle('on', p === 'div');
+    staticDraw(); updateUI();
+  }
+
+  function setGroupSize(gs) {
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    groupSize = gs; step = 0; animating = false;
+    staticDraw(); updateUI();
   }
 
   // ── UI builder ────────────────────────────────────────────
-  function N(v, c) { return `<span class="en" style="color:${c}">${v}</span>`; }
-  function O(v)    { return `<span class="eo">${v}</span>`; }
+  function N(v, c, fade) {
+    return `<span class="en" style="color:${c};${fade ? 'opacity:.3;' : ''}">${v}</span>`;
+  }
+  function O(v) { return `<span class="eo">${v}</span>`; }
   const Q = `<span class="eq">？</span>`;
 
   function updateUI() {
-    const done  = step >= ROWS;
-    const total = step * COLS;
+    const { rows, cols } = L();
+    const done  = step >= rows;
+    const total = step * cols;
     const rem   = TOT - total;
+
+    // ── Grouping toggle ──────────────────────────────────────
+    const gs4on = groupSize === 4 ? 'on' : '';
+    const gs7on = groupSize === 7 ? 'on' : '';
+    if (phase === 'mul') {
+      document.getElementById('gtabs').innerHTML =
+        `<button class="gtab ${gs4on}" onclick="setGroupSize(4)">一次 4 個<br><small style="font-weight:normal">重複 7 次</small></button>` +
+        `<button class="gtab ${gs7on}" onclick="setGroupSize(7)">一次 7 個<br><small style="font-weight:normal">重複 4 次</small></button>`;
+    } else {
+      document.getElementById('gtabs').innerHTML =
+        `<button class="gtab ${gs4on}" onclick="setGroupSize(4)">28 ÷ 4 = ?<br><small style="font-weight:normal">每次拿走 4 個</small></button>` +
+        `<button class="gtab ${gs7on}" onclick="setGroupSize(7)">28 ÷ 7 = ?<br><small style="font-weight:normal">每次拿走 7 個</small></button>`;
+    }
+
+    // ── Discovery banner ────────────────────────────────────
+    const disc = document.getElementById('disc');
+    if (phase === 'mul' && mulDone[4] && mulDone[7]) {
+      disc.className = 'disc on';
+      disc.innerHTML =
+        '發現了嗎？' +
+        `<b style="color:${ORC}">4×7</b> 和 <b style="color:${OVC}">7×4</b>` +
+        ` 答案都是 <b style="color:${OTC}">28</b>！<br>` +
+        '每次幾個和重複幾次，對調也沒關係！';
+    } else {
+      disc.className = 'disc';
+    }
+
+    // ── Equation & description ───────────────────────────────
+    const perGroup  = cols;   // dots per group (orange)
+    const numGroups = rows;   // number of groups (purple when complete)
 
     const primBtn = `<button class="btn pri" onclick="doStep()" ${animating ? 'disabled' : ''}>`;
     const repBtn  = `<button class="btn sec" onclick="doReplay()" ${animating ? 'disabled' : ''}>`;
 
-    if (phase === 0) {
-      // Equation: 4 × N = 4N  (or ? when unknown)
+    if (phase === 'mul') {
+      // Equation: perGroup × step = total  (total fades when done to invite switching)
       document.getElementById('eqLine').innerHTML =
-        N(4, ORC) + O('×') + (step > 0 ? N(step, OVC) : Q) +
-        O('=') + (step > 0 ? N(total, OTC) : Q);
+        N(perGroup, ORC) + O('×') +
+        (step > 0 ? N(step, OVC) : Q) + O('=') +
+        (step > 0 ? N(total, OTC, done) : Q);
 
+      const otherGs = groupSize === 4 ? 7 : 4;
       document.getElementById('desc').innerHTML =
         step === 0
-          ? `一排有 <b style="color:${ORC}">4</b> 個<br>一排一排累積，看看最後有幾個？`
+          ? `一排有 <b style="color:${ORC}">${perGroup}</b> 個<br>一排一排累積，看看總共有幾個？`
           : done
-          ? `一次 <b style="color:${ORC}">4</b> 個，重複 <b style="color:${OVC}">7</b> 次<br>總共 <b style="color:${OTC}">28</b> 個！`
-          : `一次 <b style="color:${ORC}">4</b> 個，重複了 <b style="color:${OVC}">${step}</b> 次<br>目前共 <b style="color:${OTC}">${total}</b> 個`;
+          ? `一次 <b style="color:${ORC}">${perGroup}</b> 個，重複 <b style="color:${OVC}">${numGroups}</b> 次，共 <b style="color:${OTC}">28</b> 個！` +
+            (!mulDone[otherGs]
+              ? `<br><span style="color:#aaa;font-size:13px">點上方「一次${otherGs}個」試試看！</span>`
+              : '')
+          : `一次 <b style="color:${ORC}">${perGroup}</b> 個，重複了 <b style="color:${OVC}">${step}</b> 次<br>目前共 <b style="color:${OTC}">${total}</b> 個`;
 
       document.getElementById('btns').innerHTML = done
-        ? `${repBtn}↺ 再看一次</button>
-           <button class="btn go" onclick="goPhase(1)">➗ 除法 →</button>`
+        ? `${repBtn}↺ 再看一次</button>` +
+          `<button class="btn go" onclick="goPhase('div')">➗ 除法 →</button>`
         : `${primBtn}出現第 ${step + 1} 排 →</button>${repBtn}↺ 重看</button>`;
 
     } else {
-      // Equation: 28 ÷ 4 = N  (or ?)
+      // Division equation: TOT ÷ perGroup = step (quotient builds up)
       document.getElementById('eqLine').innerHTML =
-        N(28, OTC) + O('÷') + N(4, ORC) + O('=') +
+        N(TOT, OTC) + O('÷') + N(perGroup, ORC) + O('=') +
         (step > 0 ? N(step, OVC) : Q);
 
       document.getElementById('desc').innerHTML =
         step === 0
-          ? `共 <b style="color:${OTC}">28</b> 個，每次圈走 <b style="color:${ORC}">4</b> 個<br>要圈幾次才能全部圈完？`
+          ? `共 <b style="color:${OTC}">${TOT}</b> 個，每次拿走 <b style="color:${ORC}">${perGroup}</b> 個<br>要拿幾次才能全部拿完？`
           : done
-          ? `每次 <b style="color:${ORC}">4</b> 個，圈了 <b style="color:${OVC}">7</b> 次<br>恰好全部圈完！`
-          : `已圈走 <b style="color:${OVC}">${step}</b> 次，每次 <b style="color:${ORC}">4</b> 個<br>還剩 <b style="color:#666">${rem}</b> 個沒圈`;
+          ? `每次拿走 <b style="color:${ORC}">${perGroup}</b> 個，拿了 <b style="color:${OVC}">${numGroups}</b> 次<br>恰好全部拿完！`
+          : `已拿走 <b style="color:${OVC}">${step}</b> 次，每次 <b style="color:${ORC}">${perGroup}</b> 個<br>還剩 <b style="color:${OTC}">${rem}</b> 個`;
 
       document.getElementById('btns').innerHTML = done
-        ? `${repBtn}↺ 再看一次</button>
-           <button class="btn sec" onclick="goPhase(0)">✖ 乘法 ←</button>`
-        : `${primBtn}圈走第 ${step + 1} 組 →</button>${repBtn}↺ 重看</button>`;
+        ? `${repBtn}↺ 再看一次</button>` +
+          `<button class="btn sec" onclick="goPhase('mul')">✖ 乘法 ←</button>`
+        : `${primBtn}拿走第 ${step + 1} 組 →</button>${repBtn}↺ 重看</button>`;
     }
   }
 
