@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>找出□的數</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav a { font-size: 14px; color: #666; text-decoration: none; }
+    .nav span { width: 60px; }
+    .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
+
+    .wrap { max-width: 780px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    .main-cols { display: flex; flex-direction: column; gap: 12px; }
+    @media (min-width: 560px) {
+      .main-cols { flex-direction: row; align-items: flex-start; }
+      .left-col  { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+      .right-col { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+    }
+
+    /* Equation card */
+    .eq-card { background: #fff; border-radius: 20px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.13); padding: 28px 20px;
+               display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+    /* Progress dots */
+    .prog-dots { display: flex; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #dde3ff; transition: background .3s; }
+    .dot.done { background: #51cf66; }
+    .dot.cur  { background: #4a6cf7; }
+
+    /* Equation */
+    .eq-display { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+                  justify-content: center; min-height: 80px; }
+    .eq-op  { font-size: 34px; color: #aaa; font-weight: bold; }
+    .eq-num { font-size: 46px; font-weight: bold; color: #333; }
+
+    .eq-box { width: 70px; height: 70px; border-radius: 14px;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 40px; font-weight: bold; transition: all .3s; }
+    .eq-box.unknown { border: 3px dashed #e06b00; color: #e06b00; background: #fff8f0;
+                      animation: pulse 1.4s ease-in-out infinite; }
+    .eq-box.solved  { border: 3px solid #51cf66; color: #2f9e44; background: #f3fdf5;
+                      animation: popIn .4s cubic-bezier(.17,.67,.44,1.4) forwards; }
+    .eq-box.err     { border-color: #ff6b6b; animation: shake .3s ease; }
+
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(224,107,0,.35); }
+      50%      { box-shadow: 0 0 0 8px rgba(224,107,0,.0); }
+    }
+    @keyframes popIn {
+      0%   { transform: scale(.4); opacity: 0; }
+      70%  { transform: scale(1.2); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-9px); }
+      75%     { transform: translateX(9px); }
+    }
+
+    /* Division reveal */
+    .div-reveal { text-align: center; display: none; }
+    .div-reveal.show { display: block; animation: fadeUp .4s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .div-label { font-size: 13px; color: #888; margin-bottom: 6px; }
+    .div-eq { font-size: 26px; font-weight: bold; color: #4a6cf7; }
+
+    /* Next button */
+    .next-btn { border: none; border-radius: 14px; background: #4a6cf7; color: #fff;
+                font-size: 18px; font-weight: bold; padding: 13px 28px; cursor: pointer;
+                display: none; -webkit-tap-highlight-color: transparent; }
+    .next-btn.show { display: inline-block; }
+    .next-btn:active { opacity: .85; }
+
+    /* Hint box */
+    .hint-box { background: #fff; border-radius: 14px; padding: 14px 16px;
+                box-shadow: 0 2px 8px rgba(74,108,247,.10); text-align: center;
+                font-size: 22px; font-weight: bold; color: #555; min-height: 56px;
+                display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+    /* Number pad */
+    .np-wrap { background: #fff; border-radius: 20px; padding: 12px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.13); }
+    .np-display { font-size: 32px; font-weight: bold; color: #333; text-align: center;
+                  min-height: 44px; letter-spacing: 4px; margin-bottom: 10px; }
+    .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .nk { border: none; border-radius: 12px; font-size: 22px; font-weight: bold;
+          padding: 14px 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nk:active { opacity: .75; }
+    .nk.d  { background: #f1f3ff; color: #333; }
+    .nk.bs { background: #ffe3e3; color: #c92a2a; font-size: 18px; }
+    .nk.ok { background: #51cf66; color: #fff; font-size: 18px; }
+    .nk.ok:disabled { background: #ccc; cursor: default; }
+
+    /* Done banner */
+    .done-banner { background: #fff; border-radius: 16px; padding: 20px;
+                   box-shadow: 0 2px 12px rgba(74,108,247,.13); text-align: center;
+                   display: none; }
+    .done-banner.show { display: block; animation: fadeUp .4s ease; }
+    .done-title { font-size: 24px; font-weight: bold; color: #2f9e44; margin-bottom: 8px; }
+    .done-sub   { font-size: 15px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+    .done-btn   { border: none; border-radius: 14px; background: #4a6cf7; color: #fff;
+                  font-size: 18px; font-weight: bold; padding: 13px 28px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">← 返回</a>
+  <h2>找出 □ 的數</h2>
+  <span></span>
+</div>
+
+<div class="wrap">
+  <div class="main-cols">
+    <!-- Left: equation area -->
+    <div class="left-col">
+      <div class="eq-card">
+        <div class="prog-dots" id="progDots"></div>
+        <div class="eq-display" id="eqDisplay"></div>
+        <div class="div-reveal" id="divReveal">
+          <div class="div-label">用除法來想：</div>
+          <div class="div-eq" id="divEq"></div>
+        </div>
+        <button class="next-btn" id="nextBtn" onclick="nextProblem()">下一題 →</button>
+      </div>
+    </div>
+
+    <!-- Right: hint + numpad + done -->
+    <div class="right-col">
+      <div class="hint-box" id="hintBox"></div>
+      <div class="np-wrap">
+        <div class="np-display" id="npDisp">—</div>
+        <div class="np-grid">
+          <button class="nk d" onclick="npKey(7)">7</button>
+          <button class="nk d" onclick="npKey(8)">8</button>
+          <button class="nk d" onclick="npKey(9)">9</button>
+          <button class="nk d" onclick="npKey(4)">4</button>
+          <button class="nk d" onclick="npKey(5)">5</button>
+          <button class="nk d" onclick="npKey(6)">6</button>
+          <button class="nk d" onclick="npKey(1)">1</button>
+          <button class="nk d" onclick="npKey(2)">2</button>
+          <button class="nk d" onclick="npKey(3)">3</button>
+          <button class="nk bs" onclick="npBack()">⌫</button>
+          <button class="nk d" onclick="npKey(0)">0</button>
+          <button class="nk ok" id="okBtn" onclick="npConfirm()" disabled>✓</button>
+        </div>
+      </div>
+      <div class="done-banner" id="doneBanner">
+        <div class="done-title">全部答對！</div>
+        <div class="done-sub">
+          知道積和一個因數，<br>用除法就能找到另一個！
+        </div>
+        <button class="done-btn" onclick="location.reload()">再練一次</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // { a: left factor or null, b: right factor or null, p: product }
+  const PROBLEMS = [
+    { a: null, b: 4, p: 28 },   // □ × 4 = 28  → 7
+    { a: 3,    b: null, p: 27 }, // 3 × □ = 27  → 9
+    { a: null, b: 6, p: 42 },   // □ × 6 = 42  → 7
+    { a: 8,    b: null, p: 56 }, // 8 × □ = 56  → 7
+    { a: null, b: 5, p: 45 },   // □ × 5 = 45  → 9
+    { a: 9,    b: null, p: 63 }, // 9 × □ = 63  → 7
+    { a: null, b: 7, p: 56 },   // □ × 7 = 56  → 8
+    { a: 6,    b: null, p: 48 }, // 6 × □ = 48  → 8
+  ];
+
+  let cur = 0;
+  let input = '';
+  let phase = 'answering'; // 'answering' | 'correct'
+
+  function getAns(p) {
+    return p.a === null ? p.p / p.b : p.p / p.a;
+  }
+
+  function getDivEq(p) {
+    const ans = getAns(p);
+    const known = p.a === null ? p.b : p.a;
+    return p.p + ' ÷ ' + known + ' = ' + ans;
+  }
+
+  function renderProblem(p, state) {
+    const disp = document.getElementById('eqDisplay');
+    const ans = getAns(p);
+
+    function numSpan(val) {
+      return '<span class="eq-num">' + val + '</span>';
+    }
+    function boxSpan(state, ans) {
+      const cls = state === 'correct' ? 'solved' : state === 'err' ? 'err unknown' : 'unknown';
+      const txt = state === 'correct' ? ans : '□';
+      return '<span class="eq-box ' + cls + '" id="unknownBox">' + txt + '</span>';
+    }
+
+    let html = '';
+    html += (p.a === null ? boxSpan(state, ans) : numSpan(p.a));
+    html += '<span class="eq-op">×</span>';
+    html += (p.b === null ? boxSpan(state, ans) : numSpan(p.b));
+    html += '<span class="eq-op">=</span>';
+    html += numSpan(p.p);
+    disp.innerHTML = html;
+  }
+
+  function renderDots() {
+    const dots = document.getElementById('progDots');
+    dots.innerHTML = '';
+    PROBLEMS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i < cur ? ' done' : i === cur ? ' cur' : '');
+      dots.appendChild(d);
+    });
+  }
+
+  function updateHint(p) {
+    const box = document.getElementById('hintBox');
+    const unk = '<span style="color:#e06b00;font-size:26px">□</span>';
+    const op  = '<span style="color:#bbb;font-weight:normal"> × </span>';
+    const eq  = '<span style="color:#bbb;font-weight:normal"> = </span>';
+    const blu = (v) => '<span style="color:#4a6cf7">' + v + '</span>';
+    const grn = (v) => '<span style="color:#2f9e44">' + v + '</span>';
+    if (p.a === null) {
+      box.innerHTML = unk + op + blu(p.b) + eq + grn(p.p);
+    } else {
+      box.innerHTML = blu(p.a) + op + unk + eq + grn(p.p);
+    }
+  }
+
+  function loadProblem() {
+    const p = PROBLEMS[cur];
+    input = '';
+    phase = 'answering';
+    renderProblem(p, 'answering');
+    renderDots();
+    updateHint(p);
+    updateNpDisp();
+    document.getElementById('divReveal').className = 'div-reveal';
+    document.getElementById('nextBtn').className = 'next-btn';
+  }
+
+  function npKey(d) {
+    if (phase !== 'answering') return;
+    if (input.length >= 3) return;
+    input += d;
+    updateNpDisp();
+  }
+
+  function npBack() {
+    if (phase !== 'answering') return;
+    input = input.slice(0, -1);
+    updateNpDisp();
+  }
+
+  function updateNpDisp() {
+    document.getElementById('npDisp').textContent = input || '—';
+    document.getElementById('okBtn').disabled = (input === '' || phase !== 'answering');
+  }
+
+  function npConfirm() {
+    if (phase !== 'answering' || input === '') return;
+    const p = PROBLEMS[cur];
+    const ans = getAns(p);
+
+    if (parseInt(input) === ans) {
+      phase = 'correct';
+      renderProblem(p, 'correct');
+      input = '';
+      updateNpDisp();
+      setTimeout(() => {
+        document.getElementById('divEq').textContent = getDivEq(p);
+        document.getElementById('divReveal').className = 'div-reveal show';
+        const isLast = cur >= PROBLEMS.length - 1;
+        if (!isLast) {
+          document.getElementById('nextBtn').className = 'next-btn show';
+        } else {
+          setTimeout(() => {
+            document.getElementById('doneBanner').className = 'done-banner show';
+          }, 400);
+        }
+      }, 350);
+    } else {
+      renderProblem(p, 'err');
+      input = '';
+      updateNpDisp();
+      setTimeout(() => renderProblem(p, 'answering'), 350);
+    }
+  }
+
+  function nextProblem() {
+    cur++;
+    if (cur < PROBLEMS.length) loadProblem();
+  }
+
+  loadProblem();
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>第七單元 乘法與除法</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    .hero { background: linear-gradient(135deg, #4a6cf7 0%, #7c3aed 100%);
+            padding: 28px 20px 24px; text-align: center; color: #fff; }
+    .hero-sub { font-size: 13px; letter-spacing: 2px; opacity: .75; margin-bottom: 6px; }
+    .hero-title { font-size: 26px; font-weight: bold; }
+
+    .wrap { max-width: 680px; margin: 0 auto; padding: 16px 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    .section-label { font-size: 13px; font-weight: bold; color: #aaa;
+                     letter-spacing: 1px; padding-left: 4px; }
+
+    /* Activity cards */
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 400px) { .cards { grid-template-columns: 1fr; } }
+
+    .card { background: #fff; border-radius: 18px; overflow: hidden;
+            box-shadow: 0 2px 12px rgba(74,108,247,.10);
+            text-decoration: none; color: inherit;
+            display: flex; flex-direction: column;
+            transition: transform .15s, box-shadow .15s;
+            -webkit-tap-highlight-color: transparent; }
+    .card:active { transform: scale(.97); }
+
+    .card-top { height: 7px; }
+    .card-body { padding: 14px 14px 16px; flex: 1; display: flex; flex-direction: column; }
+    .card-icon { font-size: 30px; margin-bottom: 8px; }
+    .card-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 4px; }
+    .card-desc { font-size: 13px; color: #888; line-height: 1.5; flex: 1; }
+    .card-go { margin-top: 12px; font-size: 13px; font-weight: bold; }
+
+    /* coming-soon card */
+    .card.soon { opacity: .55; pointer-events: none; }
+    .card.soon .card-go { color: #bbb; }
+
+    /* sequence label */
+    .seq { display: inline-block; background: #f0f4ff; color: #4a6cf7;
+           font-size: 11px; font-weight: bold; border-radius: 6px;
+           padding: 2px 7px; margin-bottom: 8px; letter-spacing: .5px; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-sub">康軒三下數學 · 第七單元</div>
+  <div class="hero-title">乘法與除法</div>
+</div>
+
+<div class="wrap">
+  <div class="section-label">活動一 · 乘除的關係</div>
+
+  <div class="cards">
+    <!-- 乘除關係 -->
+    <a class="card" href="mul.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#e06b00,#ffd43b)"></div>
+      <div class="card-body">
+        <div class="seq">觀察</div>
+        <div class="card-icon">🟠</div>
+        <div class="card-title">乘法累積 × 除法分組</div>
+        <div class="card-desc">一排一排累積看乘法；一組一組拿走看除法。觀察 4×7 和 7×4 的關係。</div>
+        <div class="card-go" style="color:#e06b00">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 倍機器 -->
+    <a class="card" href="machine.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#4a6cf7,#7c3aed)"></div>
+      <div class="card-body">
+        <div class="seq">練習</div>
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">倍機器</div>
+        <div class="card-desc">機器把數字變成 N 倍，知道輸出能找輸入嗎？正向乘法 + 反向除法。</div>
+        <div class="card-go" style="color:#4a6cf7">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 乘除互逆發現 -->
+    <a class="card" href="inverse.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#2f9e44,#51cf66)"></div>
+      <div class="card-body">
+        <div class="seq">發現</div>
+        <div class="card-icon">🔍</div>
+        <div class="card-title">乘除互逆發現</div>
+        <div class="card-desc">同一批點，橫切看除法、直切看另一個除法。找出三個數字的規律。</div>
+        <div class="card-go" style="color:#2f9e44">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 找出□的數 -->
+    <a class="card" href="unknown.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#e64980,#f783ac)"></div>
+      <div class="card-body">
+        <div class="seq">應用</div>
+        <div class="card-icon">🔢</div>
+        <div class="card-title">□ × 4 = 28</div>
+        <div class="card-desc">知道積和一個因數，用除法找出另一個。乘除互逆的應用。</div>
+        <div class="card-go" style="color:#e64980">開始 →</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>
