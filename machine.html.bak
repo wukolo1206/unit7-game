@@ -13,29 +13,8 @@
     .nav a { font-size: 14px; color: #666; text-decoration: none; }
     .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
 
-    .act-bar { display: flex; background: #fff; border-bottom: 2px solid #e8eeff;
-               overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .act-bar::-webkit-scrollbar { display: none; }
-    .act-btn { flex: 1; min-width: 72px; padding: 8px 4px 7px; border: none;
-               background: transparent; font-size: 12px; font-weight: bold;
-               color: #999; cursor: pointer; text-decoration: none;
-               display: flex; flex-direction: column; align-items: center; gap: 2px;
-               border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
-               -webkit-tap-highlight-color: transparent; white-space: nowrap; }
-    .act-btn .act-icon { font-size: 16px; }
-    .act-btn:hover { color: #4a6cf7; }
-    .act-btn.act-on { color: #4a6cf7; border-bottom-color: #4a6cf7; background: #f5f7ff; }
-
-    .wrap { max-width: 780px; margin: 0 auto; padding: 12px;
+    .wrap { max-width: 420px; margin: 0 auto; padding: 12px;
             display: flex; flex-direction: column; gap: 12px; }
-
-    /* Side-by-side layout on wider screens */
-    .main-cols { display: flex; flex-direction: column; gap: 12px; }
-    @media (min-width: 560px) {
-      .main-cols { flex-direction: row; align-items: flex-start; }
-      .left-col  { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-      .right-col { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
-    }
 
     /* Multiplier selector */
     .mul-bar { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -144,66 +123,65 @@
 <body>
 
 <div class="nav">
-  <span></span>
+  <a href="mul.html">← 乘除關係</a>
   <h2>倍機器</h2>
-  <span></span>
+  <a href="inverse.html">發現規律 →</a>
 </div>
-<nav class="act-bar">
-  <a class="act-btn" href="mul.html"><span class="act-icon">🔵</span>乘除關係</a>
-  <a class="act-btn act-on" href="machine.html"><span class="act-icon">⚙️</span>倍機器</a>
-  <a class="act-btn" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
-  <a class="act-btn" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
-</nav>
 
 <div class="wrap">
-  <!-- Multiplier selector (full width) -->
+  <!-- Multiplier selector -->
   <div class="mul-bar" id="mulBar"></div>
 
-  <div class="main-cols">
-    <!-- Left: machine -->
-    <div class="left-col">
-      <div class="machine-card">
-        <div class="machine-cols">
-          <div class="col-io left" id="colIn"></div>
-          <div class="col-mid">
-            <div class="mid-head">
-              <div class="mid-n" id="midN">×4</div>
-              <div class="mid-sub">倍機器</div>
-            </div>
-            <div class="mid-rows" id="midRows"></div>
-          </div>
-          <div class="col-io right" id="colOut"></div>
-        </div>
-      </div>
-      <div class="prog" id="prog"></div>
-    </div>
+  <!-- Machine -->
+  <div class="machine-card">
+    <div class="machine-cols">
+      <!-- Input column -->
+      <div class="col-io left" id="colIn"></div>
 
-    <!-- Right: hint + numpad + done banner -->
-    <div class="right-col">
-      <div class="hint-box" id="hintBox">點一下 <span style="color:#e06b00">？</span> 開始作答</div>
-      <div class="np-wrap">
-        <div class="np-display" id="npDisp">—</div>
-        <div class="np-grid">
-          <button class="nk d" onclick="npKey(7)">7</button>
-          <button class="nk d" onclick="npKey(8)">8</button>
-          <button class="nk d" onclick="npKey(9)">9</button>
-          <button class="nk d" onclick="npKey(4)">4</button>
-          <button class="nk d" onclick="npKey(5)">5</button>
-          <button class="nk d" onclick="npKey(6)">6</button>
-          <button class="nk d" onclick="npKey(1)">1</button>
-          <button class="nk d" onclick="npKey(2)">2</button>
-          <button class="nk d" onclick="npKey(3)">3</button>
-          <button class="nk bs" onclick="npBack()">⌫</button>
-          <button class="nk d" onclick="npKey(0)">0</button>
-          <button class="nk ok" id="okBtn" onclick="npConfirm()">✓</button>
+      <!-- Middle machine column -->
+      <div class="col-mid">
+        <div class="mid-head">
+          <div class="mid-n" id="midN">×4</div>
+          <div class="mid-sub">倍機器</div>
         </div>
+        <div class="mid-rows" id="midRows"></div>
       </div>
-      <div class="done-banner" id="doneBanner">
-        <div class="done-title">🎉 全部答對！</div>
-        <div class="done-sub" id="doneSub"></div>
-        <button class="done-btn" onclick="nextMul()">試試其他倍機器 →</button>
-      </div>
+
+      <!-- Output column -->
+      <div class="col-io right" id="colOut"></div>
     </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="prog" id="prog"></div>
+
+  <!-- Equation hint for selected slot -->
+  <div class="hint-box" id="hintBox">點一下 ？ 開始作答</div>
+
+  <!-- Number pad -->
+  <div class="np-wrap">
+    <div class="np-display" id="npDisp">—</div>
+    <div class="np-grid">
+      <button class="nk d" onclick="npKey(7)">7</button>
+      <button class="nk d" onclick="npKey(8)">8</button>
+      <button class="nk d" onclick="npKey(9)">9</button>
+      <button class="nk d" onclick="npKey(4)">4</button>
+      <button class="nk d" onclick="npKey(5)">5</button>
+      <button class="nk d" onclick="npKey(6)">6</button>
+      <button class="nk d" onclick="npKey(1)">1</button>
+      <button class="nk d" onclick="npKey(2)">2</button>
+      <button class="nk d" onclick="npKey(3)">3</button>
+      <button class="nk bs" onclick="npBack()">⌫</button>
+      <button class="nk d" onclick="npKey(0)">0</button>
+      <button class="nk ok" id="okBtn" onclick="npConfirm()">✓</button>
+    </div>
+  </div>
+
+  <!-- All-done banner -->
+  <div class="done-banner" id="doneBanner">
+    <div class="done-title">🎉 全部答對！</div>
+    <div class="done-sub" id="doneSub"></div>
+    <button class="done-btn" onclick="nextMul()">試試其他倍機器 →</button>
   </div>
 </div>
 
@@ -358,7 +336,7 @@
       const b = document.createElement('button');
       b.className = 'mp' + (m === curMul ? ' on' : '');
       b.textContent = '×' + m;
-      b.onclick = () => { init(m); refreshMulBar(); };
+      b.onclick = () => { init(m); buildMulBar(); };
       b.id = 'mp-' + m;
       bar.appendChild(b);
     });

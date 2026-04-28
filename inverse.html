@@ -13,6 +13,19 @@
     .nav h2 { font-size: 16px; font-weight: bold; color: #333; }
     .nav a { font-size: 14px; color: #999; text-decoration: none; }
 
+    .act-bar { display: flex; background: #fff; border-bottom: 2px solid #e8eeff;
+               overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .act-bar::-webkit-scrollbar { display: none; }
+    .act-btn { flex: 1; min-width: 72px; padding: 8px 4px 7px; border: none;
+               background: transparent; font-size: 12px; font-weight: bold;
+               color: #999; cursor: pointer; text-decoration: none;
+               display: flex; flex-direction: column; align-items: center; gap: 2px;
+               border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
+               -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+    .act-btn .act-icon { font-size: 16px; }
+    .act-btn:hover { color: #4a6cf7; }
+    .act-btn.act-on { color: #4a6cf7; border-bottom-color: #4a6cf7; background: #f5f7ff; }
+
     .wrap { max-width: 480px; margin: 0 auto; padding: 12px;
             display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
@@ -98,8 +111,14 @@
 <div class="nav">
   <span></span>
   <h2>乘除互逆發現</h2>
-  <a href="#">第七單元</a>
+  <span></span>
 </div>
+<nav class="act-bar">
+  <a class="act-btn" href="mul.html"><span class="act-icon">🔵</span>乘除關係</a>
+  <a class="act-btn" href="machine.html"><span class="act-icon">⚙️</span>倍機器</a>
+  <a class="act-btn act-on" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
+  <a class="act-btn" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
+</nav>
 
 <div class="wrap">
   <div class="progress">
