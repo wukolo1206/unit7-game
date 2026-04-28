@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>乘除互逆發現</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav h2 { font-size: 16px; font-weight: bold; color: #333; }
+    .nav a { font-size: 14px; color: #999; text-decoration: none; }
+
+    .wrap { max-width: 480px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+    /* Progress */
+    .progress { width: 100%; display: flex; justify-content: space-between;
+                align-items: center; font-size: 14px; color: #888; }
+    .progress-dots { display: flex; gap: 6px; }
+    .pdot { width: 10px; height: 10px; border-radius: 50%; background: #dde3ff; transition: background 0.3s; }
+    .pdot.done { background: #4a6cf7; }
+    .pdot.active { background: #51cf66; }
+
+    /* Canvas */
+    .canvas-wrap { background: #fff; border-radius: 16px; padding: 10px;
+                   box-shadow: 0 2px 10px rgba(74,108,247,0.12); }
+    canvas { display: block; }
+
+    /* Equations */
+    .eq-card { background: #fff; border-radius: 16px; padding: 14px 20px;
+               box-shadow: 0 2px 10px rgba(74,108,247,0.12); width: 100%; }
+    .eq-row { display: flex; align-items: center; gap: 0; margin: 4px 0; min-height: 44px; }
+    .eq-label { font-size: 12px; font-weight: bold; color: #bbb;
+                width: 24px; flex-shrink: 0; }
+    .eq-text { font-size: 28px; font-weight: bold; display: flex;
+               align-items: center; gap: 6px; flex: 1; }
+    .eq-text .op { color: #999; font-weight: normal; }
+    .eq-text .num { transition: color 0.4s; }
+    .eq-divider { height: 1px; background: #f0f0f0; margin: 6px 0; }
+
+    .div-eq { opacity: 0; transform: translateY(8px);
+              transition: opacity 0.5s, transform 0.5s; }
+    .div-eq.show { opacity: 1; transform: translateY(0); }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 10px; width: 100%; }
+    .cut-btn { flex: 1; border: 2.5px solid; border-radius: 14px; font-size: 18px;
+               font-weight: bold; padding: 14px; cursor: pointer;
+               transition: background 0.15s, opacity 0.15s;
+               -webkit-tap-highlight-color: transparent; background: #fff; }
+    .cut-btn:active { opacity: 0.7; }
+    .cut-btn:disabled { opacity: 0.3; cursor: default; }
+    .h-btn { border-color: #e06b00; color: #e06b00; }
+    .h-btn.done { background: #fff4e6; }
+    .v-btn { border-color: #7c3aed; color: #7c3aed; }
+    .v-btn.done { background: #f5f0ff; }
+
+    .next-btn { width: 100%; background: #51cf66; color: #fff; border: none;
+                border-radius: 14px; font-size: 20px; font-weight: bold;
+                padding: 15px; cursor: pointer; display: none; }
+    .next-btn:active { background: #40c057; }
+
+    /* Prediction round */
+    .predict-card { background: #fff; border-radius: 16px; padding: 20px;
+                    box-shadow: 0 2px 10px rgba(74,108,247,0.12); width: 100%; display: none; }
+    .predict-card.show { display: block; }
+    .predict-title { font-size: 16px; color: #555; margin-bottom: 16px; }
+    .predict-mul { font-size: 32px; font-weight: bold; color: #4a6cf7;
+                   text-align: center; margin-bottom: 20px; }
+    .predict-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+    .predict-eq { font-size: 26px; font-weight: bold; color: #888; flex: 1; }
+    .reveal-btn { background: #f0f0f0; border: none; border-radius: 10px;
+                  font-size: 14px; color: #666; padding: 8px 14px; cursor: pointer; }
+    .reveal-btn:active { background: #ddd; }
+    .predict-answer { font-size: 26px; font-weight: bold;
+                      opacity: 0; transition: opacity 0.4s; }
+    .predict-answer.show { opacity: 1; }
+
+    /* Summary */
+    .summary-card { background: #fff; border-radius: 16px; padding: 20px;
+                    box-shadow: 0 2px 10px rgba(74,108,247,0.12); width: 100%;
+                    text-align: center; display: none; }
+    .summary-card.show { display: block; }
+    .summary-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 16px; }
+    .pattern { background: #f8f9ff; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    .pattern-line { font-size: 24px; font-weight: bold; margin: 6px 0; }
+    .pattern-arrow { font-size: 20px; color: #aaa; margin: 4px 0; }
+    .restart-btn { background: #4a6cf7; color: #fff; border: none; border-radius: 12px;
+                   font-size: 18px; font-weight: bold; padding: 14px 32px;
+                   cursor: pointer; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <span></span>
+  <h2>乘除互逆發現</h2>
+  <a href="#">第七單元</a>
+</div>
+
+<div class="wrap">
+  <div class="progress">
+    <span id="progressText">第 1 組 觀察</span>
+    <div class="progress-dots" id="progressDots"></div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="cvs" width="280" height="220"></canvas>
+  </div>
+
+  <div class="eq-card" id="eqCard">
+    <div class="eq-row">
+      <div class="eq-label">×</div>
+      <div class="eq-text" id="mulEq">
+        <span class="num" id="numA" style="color:#e06b00">?</span>
+        <span class="op">×</span>
+        <span class="num" id="numB" style="color:#7c3aed">?</span>
+        <span class="op">=</span>
+        <span class="num" id="numC" style="color:#2f9e44">?</span>
+      </div>
+    </div>
+    <div class="eq-divider"></div>
+    <div class="eq-row div-eq" id="hEqRow">
+      <div class="eq-label">÷</div>
+      <div class="eq-text">
+        <span class="num" style="color:#2f9e44" id="hC">?</span>
+        <span class="op">÷</span>
+        <span class="num" style="color:#e06b00" id="hA">?</span>
+        <span class="op">=</span>
+        <span class="num" style="color:#7c3aed" id="hB">?</span>
+      </div>
+    </div>
+    <div class="eq-row div-eq" id="vEqRow">
+      <div class="eq-label">÷</div>
+      <div class="eq-text">
+        <span class="num" style="color:#2f9e44" id="vC">?</span>
+        <span class="op">÷</span>
+        <span class="num" style="color:#7c3aed" id="vB">?</span>
+        <span class="op">=</span>
+        <span class="num" style="color:#e06b00" id="vA">?</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row" id="btnRow">
+    <button class="cut-btn h-btn" id="hBtn" onclick="doCut('h')" disabled>
+      ↔ 橫切（排數）
+    </button>
+    <button class="cut-btn v-btn" id="vBtn" onclick="doCut('v')" disabled>
+      ↕ 直切（行數）
+    </button>
+  </div>
+  <button class="next-btn" id="nextBtn" onclick="nextRound()">下一組 →</button>
+
+  <!-- Prediction round -->
+  <div class="predict-card" id="predictCard">
+    <div class="predict-title">🧠 不看圖，你能找出兩個除法算式嗎？</div>
+    <div class="predict-mul" id="predictMul"></div>
+    <div class="predict-row">
+      <div class="predict-eq" id="pEq1">□ ÷ □ = □</div>
+      <button class="reveal-btn" onclick="reveal(1)">點我揭曉</button>
+    </div>
+    <div class="predict-answer" id="pAns1"></div>
+    <div class="predict-row" style="margin-top:8px">
+      <div class="predict-eq" id="pEq2">□ ÷ □ = □</div>
+      <button class="reveal-btn" onclick="reveal(2)">點我揭曉</button>
+    </div>
+    <div class="predict-answer" id="pAns2"></div>
+    <button class="next-btn" id="predictNext" style="display:none;margin-top:16px" onclick="showSummary()">
+      看規律 →
+    </button>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card" id="summaryCard">
+    <div class="summary-title">你發現了什麼？</div>
+    <div class="pattern">
+      <div class="pattern-line">
+        <span style="color:#e06b00">□</span>
+        <span style="color:#999"> × </span>
+        <span style="color:#7c3aed">△</span>
+        <span style="color:#999"> = </span>
+        <span style="color:#2f9e44">○</span>
+      </div>
+      <div class="pattern-arrow">↕ 知道這個</div>
+      <div class="pattern-line">
+        <span style="color:#2f9e44">○</span>
+        <span style="color:#999"> ÷ </span>
+        <span style="color:#e06b00">□</span>
+        <span style="color:#999"> = </span>
+        <span style="color:#7c3aed">△</span>
+      </div>
+      <div class="pattern-line" style="margin-top:4px">
+        <span style="color:#2f9e44">○</span>
+        <span style="color:#999"> ÷ </span>
+        <span style="color:#7c3aed">△</span>
+        <span style="color:#999"> = </span>
+        <span style="color:#e06b00">□</span>
+      </div>
+    </div>
+    <div style="font-size:15px; color:#666; margin-top:8px">
+      乘法的三個數，可以變出兩個除法算式！
+    </div>
+    <button class="restart-btn" onclick="restart()">再看一次</button>
+  </div>
+</div>
+
+<script>
+  // ── Data ─────────────────────────────────────────────────────
+  const ROUNDS = [
+    { r: 3, c: 4 },
+    { r: 4, c: 7 },
+    { r: 5, c: 6 },
+    { r: 6, c: 8 },
+  ];
+  const PREDICT = { r: 7, c: 9 }; // no dots shown
+
+  const ORC = '#e06b00'; // orange: rows / A
+  const OVC = '#7c3aed'; // purple: cols / B
+  const OTC = '#2f9e44'; // green: total / C
+
+  // ── Canvas ───────────────────────────────────────────────────
+  const cvs = document.getElementById('cvs');
+  const ctx = cvs.getContext('2d');
+  const CW = cvs.width, CH = cvs.height;
+  const DOT_R = 8, SP = 26;
+
+  // ── State ────────────────────────────────────────────────────
+  let ri = 0;
+  // phase: 'appear'|'idle'|'h_in'|'h_show'|'h_out'|'v_in'|'v_show'|'v_out'|'done'
+  let phase = 'appear';
+  let hProg = 0, vProg = 0;
+  let hDone = false, vDone = false;
+  let pendingCut = null;
+  let animStart = 0, animDur = 700, rafId = null;
+
+  function easeOut(t) { return 1 - Math.pow(1 - Math.min(1, t), 2); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // ── Drawing ──────────────────────────────────────────────────
+  function dotBase(row, col, rows, cols) {
+    return {
+      x: (CW - (cols - 1) * SP) / 2 + col * SP,
+      y: (CH - (rows - 1) * SP) / 2 + row * SP,
+    };
+  }
+
+  function hexAlpha(a) { return Math.round(a * 255).toString(16).padStart(2, '0'); }
+
+  function parseHex(hex) {
+    const h = hex.replace('#', '');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+
+  function lerpColor(from, to, t) {
+    const [r1,g1,b1] = parseHex(from);
+    const [r2,g2,b2] = parseHex(to);
+    return `rgb(${Math.round(lerp(r1,r2,t))},${Math.round(lerp(g1,g2,t))},${Math.round(lerp(b1,b2,t))})`;
+  }
+
+  function redraw(appearProg) {
+    ctx.clearRect(0, 0, CW, CH);
+    const { r: rows, c: cols } = ROUNDS[ri];
+    const total = rows * cols;
+    const hE = easeOut(hProg), vE = easeOut(vProg);
+
+    for (let row = 0; row < rows; row++) {
+      // Row background strip (h-cut)
+      if (hE > 0.01) {
+        const p0 = dotBase(row, 0, rows, cols);
+        const p1 = dotBase(row, cols - 1, rows, cols);
+        const dy = (row - (rows - 1) / 2) * 12 * hE;
+        ctx.fillStyle = ORC + hexAlpha(hE * 0.18);
+        ctx.beginPath();
+        ctx.roundRect(p0.x - DOT_R - 6, p0.y + dy - DOT_R - 5, (p1.x - p0.x) + (DOT_R + 6) * 2, DOT_R * 2 + 10, 8);
+        ctx.fill();
+      }
+
+      for (let col = 0; col < cols; col++) {
+        const base = dotBase(row, col, rows, cols);
+
+        // Position
+        const dy = (row - (rows - 1) / 2) * 12 * hE;
+        const dx = (col - (cols - 1) / 2) * 12 * vE;
+        const x = base.x + dx;
+        const y = base.y + dy;
+
+        // Color
+        let color = '#4a6cf7';
+        if (hE > 0) color = lerpColor('#4a6cf7', ORC, hE);
+        if (vE > 0) color = lerpColor(hE > 0 ? ORC : '#4a6cf7', OVC, vE);
+
+        // Appear animation
+        let opacity = 1;
+        if (phase === 'appear' && appearProg !== undefined) {
+          const threshold = (row * cols + col) / (total * 1.2);
+          opacity = Math.max(0, Math.min(1, (appearProg - threshold) / 0.15));
+        }
+
+        ctx.globalAlpha = opacity;
+        ctx.beginPath();
+        ctx.arc(x, y, DOT_R, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Column background strips (v-cut) — drawn separately on top
+    if (vE > 0.01) {
+      for (let col = 0; col < cols; col++) {
+        const p0 = dotBase(0, col, rows, cols);
+        const p1 = dotBase(rows - 1, col, rows, cols);
+        const dx = (col - (cols - 1) / 2) * 12 * vE;
+        ctx.fillStyle = OVC + hexAlpha(vE * 0.18);
+        ctx.beginPath();
+        ctx.roundRect(p0.x + dx - DOT_R - 5, p0.y - DOT_R - 6, DOT_R * 2 + 10, (p1.y - p0.y) + (DOT_R + 6) * 2, 8);
+        ctx.fill();
+      }
+    }
+  }
+
+  // ── Animation ────────────────────────────────────────────────
+  function startAnim(type, onDone) {
+    animStart = performance.now();
+    function tick(ts) {
+      const t = Math.min(1, (ts - animStart) / animDur);
+      if (type === 'appear') {
+        redraw(t);
+      } else if (type === 'h_in') {
+        hProg = t; redraw();
+      } else if (type === 'v_in') {
+        vProg = t; redraw();
+      } else if (type === 'h_out') {
+        hProg = 1 - t; redraw();
+      } else if (type === 'v_out') {
+        vProg = 1 - t; redraw();
+      }
+      if (t < 1) rafId = requestAnimationFrame(tick);
+      else { if (rafId) cancelAnimationFrame(rafId); onDone && onDone(); }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // ── Cut logic ────────────────────────────────────────────────
+  function doCut(which) {
+    if (phase !== 'idle' && phase !== 'h_show' && phase !== 'v_show') return;
+
+    document.getElementById('hBtn').disabled = true;
+    document.getElementById('vBtn').disabled = true;
+
+    if (which === 'h') {
+      if (vProg > 0) {
+        // Reset v first, then do h
+        phase = 'v_out';
+        startAnim('v_out', () => { vProg = 0; doHIn(); });
+      } else {
+        doHIn();
+      }
+    } else {
+      if (hProg > 0) {
+        phase = 'h_out';
+        startAnim('h_out', () => { hProg = 0; doVIn(); });
+      } else {
+        doVIn();
+      }
+    }
+  }
+
+  function doHIn() {
+    phase = 'h_in';
+    startAnim('h_in', () => {
+      hProg = 1; hDone = true; phase = 'h_show';
+      document.getElementById('hEqRow').classList.add('show');
+      document.getElementById('hBtn').classList.add('done');
+      checkBothDone();
+    });
+  }
+
+  function doVIn() {
+    phase = 'v_in';
+    startAnim('v_in', () => {
+      vProg = 1; vDone = true; phase = 'v_show';
+      document.getElementById('vEqRow').classList.add('show');
+      document.getElementById('vBtn').classList.add('done');
+      checkBothDone();
+    });
+  }
+
+  function checkBothDone() {
+    if (hDone && vDone) {
+      phase = 'done';
+      document.getElementById('hBtn').disabled = true;
+      document.getElementById('vBtn').disabled = true;
+      document.getElementById('nextBtn').style.display = 'block';
+    } else {
+      // Re-enable the other button
+      if (!hDone) document.getElementById('hBtn').disabled = false;
+      if (!vDone) document.getElementById('vBtn').disabled = false;
+    }
+  }
+
+  // ── Round management ─────────────────────────────────────────
+  function loadRound() {
+    const { r: rows, c: cols } = ROUNDS[ri];
+    const total = rows * cols;
+
+    // Update equations
+    document.getElementById('numA').textContent = rows;
+    document.getElementById('numB').textContent = cols;
+    document.getElementById('numC').textContent = total;
+    document.getElementById('hC').textContent = total;
+    document.getElementById('hA').textContent = rows;
+    document.getElementById('hB').textContent = cols;
+    document.getElementById('vC').textContent = total;
+    document.getElementById('vB').textContent = cols;
+    document.getElementById('vA').textContent = rows;
+
+    // Reset division equations
+    document.getElementById('hEqRow').classList.remove('show');
+    document.getElementById('vEqRow').classList.remove('show');
+
+    // Reset buttons
+    const hb = document.getElementById('hBtn');
+    const vb = document.getElementById('vBtn');
+    hb.disabled = true; hb.classList.remove('done');
+    vb.disabled = true; vb.classList.remove('done');
+    document.getElementById('nextBtn').style.display = 'none';
+
+    // Progress dots
+    const dots = document.getElementById('progressDots');
+    dots.innerHTML = '';
+    ROUNDS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'pdot' + (i < ri ? ' done' : i === ri ? ' active' : '');
+      dots.appendChild(d);
+    });
+    document.getElementById('progressText').textContent = '第 ' + (ri + 1) + ' 組 觀察';
+
+    // Reset state
+    hProg = 0; vProg = 0; hDone = false; vDone = false; phase = 'appear';
+
+    // Start appear animation
+    startAnim('appear', () => {
+      phase = 'idle';
+      document.getElementById('hBtn').disabled = false;
+      document.getElementById('vBtn').disabled = false;
+    });
+  }
+
+  function nextRound() {
+    ri++;
+    document.getElementById('nextBtn').style.display = 'none';
+    if (ri >= ROUNDS.length) {
+      showPredict();
+    } else {
+      loadRound();
+    }
+  }
+
+  // ── Prediction round ─────────────────────────────────────────
+  function showPredict() {
+    const { r: rows, c: cols } = PREDICT;
+    const total = rows * cols;
+
+    document.getElementById('canvasWrap').style.display = 'none';
+    document.getElementById('eqCard').style.display = 'none';
+    document.getElementById('btnRow').style.display = 'none';
+    document.getElementById('predictCard').classList.add('show');
+
+    document.getElementById('progressText').textContent = '預測關卡';
+    const dots = document.getElementById('progressDots');
+    dots.querySelectorAll('.pdot').forEach(d => d.className = 'pdot done');
+
+    document.getElementById('predictMul').textContent = rows + ' × ' + cols + ' = ' + total;
+    document.getElementById('pAns1').textContent = total + ' ÷ ' + rows + ' = ' + cols;
+    document.getElementById('pAns2').textContent = total + ' ÷ ' + cols + ' = ' + rows;
+  }
+
+  let revealed = 0;
+  function reveal(n) {
+    document.getElementById('pAns' + n).classList.add('show');
+    revealed++;
+    if (revealed >= 2) {
+      setTimeout(() => {
+        document.getElementById('predictNext').style.display = 'block';
+      }, 600);
+    }
+  }
+
+  // ── Summary ──────────────────────────────────────────────────
+  function showSummary() {
+    document.getElementById('predictCard').style.display = 'none';
+    document.getElementById('summaryCard').classList.add('show');
+    document.getElementById('progressText').textContent = '發現規律！';
+  }
+
+  // ── Restart ──────────────────────────────────────────────────
+  function restart() {
+    ri = 0; revealed = 0;
+    document.getElementById('canvasWrap').style.display = '';
+    document.getElementById('eqCard').style.display = '';
+    document.getElementById('btnRow').style.display = '';
+    document.getElementById('summaryCard').classList.remove('show');
+    document.getElementById('predictCard').classList.remove('show');
+    document.getElementById('predictCard').style.display = '';
+    document.getElementById('pAns1').classList.remove('show');
+    document.getElementById('pAns2').classList.remove('show');
+    document.getElementById('predictNext').style.display = 'none';
+    loadRound();
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  loadRound();
+</script>
+</body>
+</html>
