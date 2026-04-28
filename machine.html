@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>倍機器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav a { font-size: 14px; color: #666; text-decoration: none; }
+    .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
+
+    .wrap { max-width: 420px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    /* Multiplier selector */
+    .mul-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mp { border: 2px solid #dde3ff; background: #fff; border-radius: 20px;
+          padding: 7px 14px; font-size: 15px; font-weight: bold; color: #888;
+          cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mp:active { opacity: .8; }
+    .mp.on { background: #4a6cf7; border-color: #4a6cf7; color: #fff; }
+
+    /* Machine card */
+    .machine-card { background: #fff; border-radius: 20px;
+                    box-shadow: 0 2px 12px rgba(74,108,247,.13); padding: 14px 12px; }
+
+    .machine-cols { display: flex; align-items: stretch; gap: 6px; }
+
+    /* Input / output columns */
+    .col-io { display: flex; flex-direction: column; gap: 8px; width: 80px; flex-shrink: 0; }
+    .col-io.right { align-items: flex-start; }
+    .col-io.left  { align-items: flex-end; }
+
+    .slot { width: 76px; height: 52px; background: #f8f9ff; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: bold; color: #333;
+            border: 2px solid #dde3ff; transition: border-color .2s; }
+    .slot.example { background: #f3fdf5; border-color: #a3e6b0; color: #2f9e44; }
+    .slot.unknown { border: 2.5px dashed #4a6cf7; cursor: pointer; color: #4a6cf7;
+                    font-size: 28px; -webkit-tap-highlight-color: transparent; }
+    .slot.unknown:active { background: #eef0ff; }
+    .slot.selected { background: #fff4e6; border-color: #e06b00 !important;
+                     border-style: solid !important; color: #e06b00; }
+    .slot.solved { background: #f3fdf5; border: 2px solid #a3e6b0; color: #2f9e44; }
+    .slot.pop  { animation: popIn .35s cubic-bezier(.17,.67,.44,1.4) forwards; }
+    .slot.err  { animation: shake .3s ease; }
+
+    @keyframes popIn {
+      0%   { transform: scale(.4); opacity: 0; }
+      70%  { transform: scale(1.18); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-7px); }
+      75%     { transform: translateX(7px); }
+    }
+
+    /* Middle machine column */
+    .col-mid { flex: 1; display: flex; flex-direction: column;
+               background: linear-gradient(160deg, #4a6cf7, #7c3aed);
+               border-radius: 16px; overflow: hidden; }
+
+    .mid-head { background: rgba(255,255,255,.18); padding: 8px 4px 6px;
+                display: flex; flex-direction: column; align-items: center; }
+    .mid-n { font-size: 34px; font-weight: bold; color: #fff; line-height: 1; }
+    .mid-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 2px; }
+
+    .mid-rows { flex: 1; display: flex; flex-direction: column; padding: 4px 0; }
+    .mid-row { flex: 1; display: flex; align-items: center; justify-content: center;
+               gap: 4px; min-height: 52px; }
+    .arrow { font-size: 18px; font-weight: bold; color: rgba(255,255,255,.85);
+             transition: color .3s; user-select: none; }
+    .arrow.fwd { color: #ffd43b; }   /* forward: yellow */
+    .arrow.rev { color: #f783ac; }   /* reverse: pink */
+    .arrow.done { color: #a9e34b; }  /* solved: green */
+
+    /* Progress */
+    .prog { font-size: 14px; color: #888; text-align: center; }
+    .prog b { color: #4a6cf7; font-size: 16px; }
+
+    /* Equation hint */
+    .hint-box { background: #fff; border-radius: 14px; padding: 12px 16px;
+                box-shadow: 0 2px 8px rgba(74,108,247,.10); text-align: center;
+                font-size: 18px; font-weight: bold; color: #555; min-height: 50px;
+                display: flex; align-items: center; justify-content: center; }
+    .hint-box span { margin: 0 4px; }
+    .h-q  { color: #e06b00; }
+    .h-m  { color: #4a6cf7; }
+    .h-r  { color: #2f9e44; }
+    .h-op { color: #ccc; font-weight: normal; }
+
+    /* Number pad */
+    .np-wrap { background: #fff; border-radius: 20px; padding: 12px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.13); }
+    .np-display { font-size: 32px; font-weight: bold; color: #333; text-align: center;
+                  min-height: 44px; letter-spacing: 4px; margin-bottom: 10px; }
+    .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .nk { border: none; border-radius: 12px; font-size: 22px; font-weight: bold;
+          padding: 14px 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nk:active { opacity: .75; }
+    .nk.d { background: #f1f3ff; color: #333; }
+    .nk.bs { background: #ffe3e3; color: #c92a2a; font-size: 18px; }
+    .nk.ok { background: #51cf66; color: #fff; font-size: 18px; }
+    .nk.ok:disabled { background: #ccc; }
+
+    /* Success banner */
+    .done-banner { background: #fff; border-radius: 16px; padding: 16px;
+                   box-shadow: 0 2px 12px rgba(74,108,247,.13); text-align: center;
+                   display: none; }
+    .done-banner.show { display: block; }
+    .done-title { font-size: 24px; font-weight: bold; color: #2f9e44; margin-bottom: 8px; }
+    .done-sub { font-size: 15px; color: #666; margin-bottom: 14px; }
+    .done-btn { display: inline-block; background: #4a6cf7; color: #fff; border: none;
+                border-radius: 14px; font-size: 18px; font-weight: bold;
+                padding: 13px 28px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="mul.html">← 乘除關係</a>
+  <h2>倍機器</h2>
+  <a href="inverse.html">發現規律 →</a>
+</div>
+
+<div class="wrap">
+  <!-- Multiplier selector -->
+  <div class="mul-bar" id="mulBar"></div>
+
+  <!-- Machine -->
+  <div class="machine-card">
+    <div class="machine-cols">
+      <!-- Input column -->
+      <div class="col-io left" id="colIn"></div>
+
+      <!-- Middle machine column -->
+      <div class="col-mid">
+        <div class="mid-head">
+          <div class="mid-n" id="midN">×4</div>
+          <div class="mid-sub">倍機器</div>
+        </div>
+        <div class="mid-rows" id="midRows"></div>
+      </div>
+
+      <!-- Output column -->
+      <div class="col-io right" id="colOut"></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="prog" id="prog"></div>
+
+  <!-- Equation hint for selected slot -->
+  <div class="hint-box" id="hintBox">點一下 ？ 開始作答</div>
+
+  <!-- Number pad -->
+  <div class="np-wrap">
+    <div class="np-display" id="npDisp">—</div>
+    <div class="np-grid">
+      <button class="nk d" onclick="npKey(7)">7</button>
+      <button class="nk d" onclick="npKey(8)">8</button>
+      <button class="nk d" onclick="npKey(9)">9</button>
+      <button class="nk d" onclick="npKey(4)">4</button>
+      <button class="nk d" onclick="npKey(5)">5</button>
+      <button class="nk d" onclick="npKey(6)">6</button>
+      <button class="nk d" onclick="npKey(1)">1</button>
+      <button class="nk d" onclick="npKey(2)">2</button>
+      <button class="nk d" onclick="npKey(3)">3</button>
+      <button class="nk bs" onclick="npBack()">⌫</button>
+      <button class="nk d" onclick="npKey(0)">0</button>
+      <button class="nk ok" id="okBtn" onclick="npConfirm()">✓</button>
+    </div>
+  </div>
+
+  <!-- All-done banner -->
+  <div class="done-banner" id="doneBanner">
+    <div class="done-title">🎉 全部答對！</div>
+    <div class="done-sub" id="doneSub"></div>
+    <button class="done-btn" onclick="nextMul()">試試其他倍機器 →</button>
+  </div>
+</div>
+
+<script>
+  // ── Problem data ──────────────────────────────────────────
+  // Each multiplier has 4 rows: [{i, o, u}]
+  // u: null = example (both shown), 'out' = find output, 'in' = find input
+  const DATA = {
+    2: [
+      { i:5,    o:10,  u:null  },
+      { i:7,    o:null,u:'out' },  // → 14
+      { i:null, o:16,  u:'in'  },  // 8 ←
+      { i:null, o:30,  u:'in'  },  // 15 ←
+    ],
+    3: [
+      { i:4,    o:12,  u:null  },
+      { i:6,    o:null,u:'out' },  // → 18
+      { i:null, o:21,  u:'in'  },  // 7 ←
+      { i:null, o:27,  u:'in'  },  // 9 ←
+    ],
+    4: [
+      { i:7,    o:28,  u:null  },  // connects to mul.html example!
+      { i:5,    o:null,u:'out' },  // → 20
+      { i:null, o:36,  u:'in'  },  // 9 ←
+      { i:null, o:24,  u:'in'  },  // 6 ←
+    ],
+    5: [
+      { i:6,    o:30,  u:null  },
+      { i:8,    o:null,u:'out' },  // → 40
+      { i:null, o:45,  u:'in'  },  // 9 ←
+      { i:null, o:35,  u:'in'  },  // 7 ←
+    ],
+    6: [
+      { i:4,    o:24,  u:null  },
+      { i:7,    o:null,u:'out' },  // → 42
+      { i:null, o:54,  u:'in'  },  // 9 ←
+      { i:null, o:48,  u:'in'  },  // 8 ←
+    ],
+    7: [
+      { i:3,    o:21,  u:null  },
+      { i:5,    o:null,u:'out' },  // → 35
+      { i:null, o:63,  u:'in'  },  // 9 ←
+      { i:null, o:84,  u:'in'  },  // 12 ←
+    ],
+    8: [
+      { i:4,    o:32,  u:null  },
+      { i:6,    o:null,u:'out' },  // → 48
+      { i:null, o:72,  u:'in'  },  // 9 ←
+      { i:null, o:56,  u:'in'  },  // 7 ←
+    ],
+    9: [
+      { i:3,    o:27,  u:null  },
+      { i:7,    o:null,u:'out' },  // → 63
+      { i:null, o:81,  u:'in'  },  // 9 ←
+      { i:null, o:63,  u:'in'  },  // 7 ←
+    ],
+  };
+
+  // Correct answers for each row (for unknown rows only)
+  function answer(m, rowIdx) {
+    const row = DATA[m][rowIdx];
+    if (!row.u) return null;
+    return row.u === 'out' ? row.i * m : row.o / m;
+  }
+
+  // ── State ─────────────────────────────────────────────────
+  let curMul   = 4;     // current multiplier
+  let selected = null;  // { rowIdx, side: 'in'|'out' } or null
+  let input    = '';    // current numpad input
+  let solved   = [];    // [false, false, false] for rows 1-3
+
+  // ── Init / render ─────────────────────────────────────────
+  function init(m) {
+    curMul   = m;
+    selected = null;
+    input    = '';
+    solved   = [false, false, false]; // rows index 1,2,3
+    document.getElementById('doneBanner').className = 'done-banner';
+    render();
+    updateNpDisp();
+    updateHint();
+    updateProg();
+  }
+
+  function render() {
+    const rows = DATA[curMul];
+    const colIn  = document.getElementById('colIn');
+    const colOut = document.getElementById('colOut');
+    const midRows = document.getElementById('midRows');
+    document.getElementById('midN').textContent = '×' + curMul;
+
+    colIn.innerHTML = '';
+    colOut.innerHTML = '';
+    midRows.innerHTML = '';
+
+    rows.forEach((row, ri) => {
+      const probIdx = ri - 1;  // problem index (0,1,2) for rows 1,2,3
+      const isSolved = ri > 0 && solved[probIdx];
+      const isSelected = selected && selected.rowIdx === ri;
+
+      // ── Input slot ──────────────────────────────────────
+      const slotIn = document.createElement('div');
+      if (row.u === 'in' && !isSolved) {
+        slotIn.className = 'slot unknown' + (isSelected && selected.side === 'in' ? ' selected' : '');
+        slotIn.textContent = '?';
+        slotIn.onclick = () => selectSlot(ri, 'in');
+        slotIn.id = 'slot-in-' + ri;
+      } else {
+        const val = row.u === 'in' && isSolved ? answer(curMul, ri) : row.i;
+        slotIn.className = 'slot' + (ri === 0 ? ' example' : isSolved ? ' solved' : '');
+        slotIn.textContent = val;
+        if (ri > 0 && isSolved && row.u === 'in') slotIn.id = 'slot-in-' + ri;
+      }
+      colIn.appendChild(slotIn);
+
+      // ── Output slot ─────────────────────────────────────
+      const slotOut = document.createElement('div');
+      if (row.u === 'out' && !isSolved) {
+        slotOut.className = 'slot unknown' + (isSelected && selected.side === 'out' ? ' selected' : '');
+        slotOut.textContent = '?';
+        slotOut.onclick = () => selectSlot(ri, 'out');
+        slotOut.id = 'slot-out-' + ri;
+      } else {
+        const val = row.u === 'out' && isSolved ? answer(curMul, ri) : row.o;
+        slotOut.className = 'slot' + (ri === 0 ? ' example' : isSolved ? ' solved' : '');
+        slotOut.textContent = val;
+        if (ri > 0 && isSolved && row.u === 'out') slotOut.id = 'slot-out-' + ri;
+      }
+      colOut.appendChild(slotOut);
+
+      // ── Middle arrow row ─────────────────────────────────
+      const mrow = document.createElement('div');
+      mrow.className = 'mid-row';
+      let arrowCls = 'arrow';
+      if (ri === 0)         arrowCls += '';
+      else if (isSolved)    arrowCls += ' done';
+      else if (row.u === 'out') arrowCls += ' fwd';
+      else                  arrowCls += ' rev';
+
+      const arrowChar = row.u === 'in' ? '←' : '→';
+      mrow.innerHTML =
+        `<span style="color:rgba(255,255,255,.5);font-size:12px">×${curMul}</span>` +
+        `<span class="${arrowCls}" id="arrow-${ri}">${arrowChar}</span>`;
+      midRows.appendChild(mrow);
+    });
+  }
+
+  // ── Multiplier bar ────────────────────────────────────────
+  function buildMulBar() {
+    const bar = document.getElementById('mulBar');
+    [2,3,4,5,6,7,8,9].forEach(m => {
+      const b = document.createElement('button');
+      b.className = 'mp' + (m === curMul ? ' on' : '');
+      b.textContent = '×' + m;
+      b.onclick = () => { init(m); buildMulBar(); };
+      b.id = 'mp-' + m;
+      bar.appendChild(b);
+    });
+  }
+
+  function refreshMulBar() {
+    document.querySelectorAll('.mp').forEach(b => {
+      b.classList.toggle('on', b.textContent === '×' + curMul);
+    });
+  }
+
+  // ── Slot selection ────────────────────────────────────────
+  function selectSlot(ri, side) {
+    if (ri > 0 && solved[ri - 1]) return; // already solved
+    selected = { rowIdx: ri, side };
+    input = '';
+    render();
+    updateNpDisp();
+    updateHint();
+  }
+
+  // ── Hint box ──────────────────────────────────────────────
+  function updateHint() {
+    const box = document.getElementById('hintBox');
+    if (!selected) {
+      box.innerHTML = '點一下 <span class="h-q">？</span> 開始作答';
+      return;
+    }
+    const { rowIdx, side } = selected;
+    const row = DATA[curMul][rowIdx];
+    const m = curMul;
+
+    if (side === 'out') {
+      // Find output: i × m = ?
+      box.innerHTML =
+        `<span class="h-m">${row.i}</span>` +
+        `<span class="h-op"> × </span>` +
+        `<span class="h-m">${m}</span>` +
+        `<span class="h-op"> = </span>` +
+        `<span class="h-q">？</span>`;
+    } else {
+      // Find input: ? × m = o
+      box.innerHTML =
+        `<span class="h-q">？</span>` +
+        `<span class="h-op"> × </span>` +
+        `<span class="h-m">${m}</span>` +
+        `<span class="h-op"> = </span>` +
+        `<span class="h-r">${row.o}</span>`;
+    }
+  }
+
+  // ── Number pad ────────────────────────────────────────────
+  function npKey(d) {
+    if (!selected) return;
+    if (input.length >= 3) return;
+    input += d;
+    updateNpDisp();
+  }
+
+  function npBack() {
+    input = input.slice(0, -1);
+    updateNpDisp();
+  }
+
+  function updateNpDisp() {
+    document.getElementById('npDisp').textContent = input || '—';
+    document.getElementById('okBtn').disabled = (input === '');
+  }
+
+  function npConfirm() {
+    if (!selected || input === '') return;
+    const { rowIdx } = selected;
+    const correct = answer(curMul, rowIdx);
+    if (parseInt(input) === correct) {
+      // Correct!
+      solved[rowIdx - 1] = true;
+      selected = null;
+      input = '';
+      render();
+      updateNpDisp();
+      updateHint();
+      updateProg();
+      // Pop animation
+      const side = DATA[curMul][rowIdx].u;
+      const slotId = 'slot-' + side + '-' + rowIdx;
+      const el = document.getElementById(slotId);
+      if (el) { el.classList.add('pop'); el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true }); }
+      // Check all done
+      if (solved.every(Boolean)) setTimeout(showDone, 400);
+    } else {
+      // Wrong
+      const side = DATA[curMul][rowIdx].u;
+      const slotId = 'slot-' + side + '-' + rowIdx;
+      const el = document.getElementById(slotId);
+      if (el) { el.classList.add('err'); el.addEventListener('animationend', () => el.classList.remove('err'), { once: true }); }
+      input = '';
+      updateNpDisp();
+    }
+  }
+
+  // ── Progress ──────────────────────────────────────────────
+  function updateProg() {
+    const n = solved.filter(Boolean).length;
+    document.getElementById('prog').innerHTML =
+      n === 3
+        ? `<b>全部完成 ✓</b>`
+        : `已完成 <b>${n}</b> / 3 題`;
+  }
+
+  // ── Done ──────────────────────────────────────────────────
+  function showDone() {
+    const banner = document.getElementById('doneBanner');
+    banner.className = 'done-banner show';
+    const m = curMul;
+    document.getElementById('doneSub').innerHTML =
+      `×${m} 倍機器全部搞定！<br>` +
+      `正向（乘法）和反向（除法）都難不倒你！`;
+  }
+
+  function nextMul() {
+    document.getElementById('doneBanner').className = 'done-banner';
+    const muls = [2,3,4,5,6,7,8,9];
+    const next = muls[(muls.indexOf(curMul) + 1) % muls.length];
+    init(next);
+    refreshMulBar();
+  }
+
+  // ── Start ─────────────────────────────────────────────────
+  buildMulBar();
+  init(4);  // Start with ×4 (connects to 4×7=28 from mul.html)
+</script>
+</body>
+</html>
