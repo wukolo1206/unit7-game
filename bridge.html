@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>機器到算式</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    /* ── Nav ── */
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
+    .act-bar { display: flex; background: #fff; border-bottom: 2px solid #e8eeff;
+               overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .act-bar::-webkit-scrollbar { display: none; }
+    .act-btn { flex: 1; min-width: 66px; padding: 8px 4px 7px; border: none;
+               background: transparent; font-size: 11px; font-weight: bold; color: #999;
+               cursor: pointer; text-decoration: none;
+               display: flex; flex-direction: column; align-items: center; gap: 2px;
+               border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
+               -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+    .act-btn .act-icon { font-size: 15px; }
+    .act-btn:hover  { color: #4a6cf7; }
+    .act-btn.act-on { color: #4a6cf7; border-bottom-color: #4a6cf7; background: #f5f7ff; }
+
+    /* ── Layout ── */
+    .wrap { max-width: 640px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── Phase tabs ── */
+    .phase-bar { display: flex; border-radius: 14px; overflow: hidden;
+                 box-shadow: 0 2px 8px rgba(74,108,247,.12); }
+    .ph-tab { flex: 1; padding: 9px 6px; text-align: center;
+              font-size: 12px; font-weight: bold; color: #bbb;
+              background: #fff; transition: all .3s; line-height: 1.5; }
+    .ph-tab.active { background: #4a6cf7; color: #fff; }
+    .ph-tab.done   { background: #edfff0; color: #2f9e44; }
+    .ph-tab.locked { opacity: .45; }
+
+    /* ── Phase panels ── */
+    .ph-panel { display: none; flex-direction: column; gap: 12px; }
+    .ph-panel.show { display: flex; }
+
+    /* ── Progress dots ── */
+    .prog-dots { display: flex; gap: 8px; justify-content: center; }
+    .pdot { width: 10px; height: 10px; border-radius: 50%;
+            background: #dde3ff; transition: background .3s; }
+    .pdot.done { background: #51cf66; }
+    .pdot.cur  { background: #4a6cf7; }
+
+    /* ── Phase label ── */
+    .ph-label { display: flex; align-items: flex-start; gap: 8px; }
+    .ph-badge { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 13px; font-weight: bold; color: #fff; margin-top: 1px; }
+    .badge-a { background: #4a6cf7; }
+    .badge-b { background: #e06b00; }
+    .badge-c { background: #2f9e44; }
+    .ph-label-text { font-size: 13px; color: #555; line-height: 1.6; }
+
+    /* ── Card ── */
+    .card { background: #fff; border-radius: 18px; padding: 14px 12px;
+            box-shadow: 0 2px 12px rgba(74,108,247,.13); }
+
+    /* ── Shared eq display ── */
+    .eq-row { display: flex; align-items: center; justify-content: center;
+              gap: 6px; flex-wrap: wrap; min-height: 64px; }
+    .eq-n  { font-size: 38px; font-weight: bold; color: #333; }
+    .eq-op { font-size: 28px; color: #ccc; }
+    .eq-box { width: 58px; height: 58px; border-radius: 14px;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 32px; font-weight: bold; transition: all .25s; }
+    .eq-box.undef  { border: 3px dashed #e06b00; color: #e06b00; background: #fff8f0;
+                     animation: pulse 1.4s ease-in-out infinite; }
+    .eq-box.filled { border: 3px solid #51cf66; color: #2f9e44; background: #f3fdf5;
+                     animation: popIn .4s cubic-bezier(.17,.67,.44,1.4) forwards; }
+    .eq-box.err    { border-color: #ff6b6b !important; border-style: solid !important;
+                     animation: shake .3s ease; }
+
+    /* ── Phase A: mini machine ── */
+    .a-layout { display: flex; align-items: center; justify-content: center;
+                gap: 10px; flex-wrap: wrap; }
+    .mini-mach { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .ms { width: 60px; height: 52px; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 22px; font-weight: bold; }
+    .ms.known  { background: #f3fdf5; border: 2px solid #a3e6b0; color: #2f9e44; }
+    .ms.undef  { background: #fff8f0; border: 2.5px dashed #e06b00; color: #e06b00;
+                 animation: pulse 1.4s ease-in-out infinite; }
+    .ms.filled { background: #f3fdf5; border: 2px solid #51cf66; color: #2f9e44;
+                 animation: popIn .4s cubic-bezier(.17,.67,.44,1.4) forwards; }
+    .ms.err    { animation: shake .3s ease; }
+    .m-body { background: linear-gradient(160deg,#4a6cf7,#7c3aed);
+              border-radius: 13px; padding: 6px 10px; text-align: center;
+              color: #fff; min-width: 50px; }
+    .m-body .mb-n { font-size: 20px; font-weight: bold; }
+    .m-body .mb-s { font-size: 10px; opacity: .75; }
+    .m-arr { font-size: 18px; font-weight: bold; }
+    .m-arr.fwd  { color: #ffd43b; }
+    .m-arr.rev  { color: #f783ac; }
+    .bridge-eq { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bridge-lbl { font-size: 11px; color: #aaa; font-weight: bold; }
+
+    /* ── Phase B: direction buttons ── */
+    .dir-row { display: flex; gap: 10px; }
+    .dir-btn { flex: 1; border-radius: 16px; padding: 12px 8px;
+               cursor: pointer; text-align: center; transition: all .2s;
+               -webkit-tap-highlight-color: transparent; background: #fff; }
+    .dir-btn:active { opacity: .8; }
+    .dir-btn .db-icon  { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+    .dir-btn .db-main  { font-size: 14px; font-weight: bold; }
+    .dir-btn .db-sub   { font-size: 11px; color: #888; margin-top: 2px; }
+    .dir-btn.fwd-style { border: 2.5px solid #ffd43b; }
+    .dir-btn.rev-style { border: 2.5px solid #f783ac; }
+    .dir-btn.fwd-style .db-icon { color: #b89600; }
+    .dir-btn.rev-style .db-icon { color: #d6336c; }
+    .dir-btn.sel-fwd   { background: #fffbdd; border-color: #ffd43b; }
+    .dir-btn.sel-rev   { background: #fff0f6; border-color: #f783ac; }
+    .dir-btn.dim       { opacity: .35; pointer-events: none; }
+    .dir-btn.wrong     { animation: shake .3s ease; }
+
+    /* ── Hint box ── */
+    .hint-box { background: #f8f9ff; border: 1.5px solid #dde3ff; border-radius: 14px;
+                padding: 10px 14px; text-align: center; font-size: 18px;
+                font-weight: bold; color: #555; min-height: 46px;
+                display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .h-q  { color: #e06b00; }
+    .h-m  { color: #4a6cf7; }
+    .h-r  { color: #2f9e44; }
+    .h-op { color: #ccc; font-weight: normal; font-size: 16px; }
+
+    /* ── Phase C hint button ── */
+    .hint-btn { border: 2px solid #dde3ff; background: #fff; border-radius: 20px;
+                padding: 8px 18px; font-size: 14px; font-weight: bold; color: #888;
+                cursor: pointer; transition: all .2s; -webkit-tap-highlight-color: transparent; }
+    .hint-btn:active { opacity: .8; }
+    .hint-btn.lv1 { border-color: #ffd43b; color: #b89600; background: #fffbdd; }
+    .hint-btn.lv2 { border-color: #ccc; color: #aaa; cursor: default; }
+    .div-hint { text-align: center; font-size: 20px; font-weight: bold;
+                color: #4a6cf7; display: none; }
+    .div-hint.show { display: block; animation: fadeUp .4s ease; }
+
+    /* ── Numpad (shared) ── */
+    .np-wrap { background: #fff; border-radius: 18px; padding: 12px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.10); }
+    .np-disp { font-size: 30px; font-weight: bold; color: #333;
+               text-align: center; min-height: 40px; letter-spacing: 4px;
+               margin-bottom: 10px; }
+    .np-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .nk { border: none; border-radius: 12px; font-size: 22px; font-weight: bold;
+          padding: 14px 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nk:active { opacity: .75; }
+    .nk.d  { background: #f1f3ff; color: #333; }
+    .nk.bs { background: #ffe3e3; color: #c92a2a; font-size: 18px; }
+    .nk.ok { background: #51cf66; color: #fff; font-size: 18px; }
+    .nk.ok:disabled { background: #ccc; cursor: default; }
+
+    /* ── Phase done banner ── */
+    .done-banner { background: #fff; border-radius: 18px; padding: 20px;
+                   box-shadow: 0 2px 12px rgba(74,108,247,.13); text-align: center;
+                   display: none; }
+    .done-banner.show { display: block; animation: fadeUp .4s ease; }
+    .done-title { font-size: 20px; font-weight: bold; color: #2f9e44; margin-bottom: 8px; }
+    .done-sub   { font-size: 13px; color: #666; line-height: 1.8; margin-bottom: 16px; }
+    .done-btn   { border: none; border-radius: 14px; background: #4a6cf7; color: #fff;
+                  font-size: 16px; font-weight: bold; padding: 12px 26px; cursor: pointer; }
+
+    /* ── Final banner ── */
+    .final-banner { background: linear-gradient(135deg,#4a6cf7,#7c3aed);
+                    border-radius: 18px; padding: 28px 20px; text-align: center;
+                    color: #fff; display: none; }
+    .final-banner.show { display: block; animation: fadeUp .4s ease; }
+    .final-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    .final-sub   { font-size: 13px; opacity: .85; line-height: 1.8; margin-bottom: 20px; }
+    .final-btn   { border: none; border-radius: 14px; background: #fff; color: #4a6cf7;
+                   font-size: 16px; font-weight: bold; padding: 12px 26px; cursor: pointer; }
+
+    /* ── Animations ── */
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(224,107,0,.35); }
+      50%      { box-shadow: 0 0 0 7px rgba(224,107,0,0); }
+    }
+    @keyframes popIn {
+      0%   { transform: scale(.4); opacity: 0; }
+      70%  { transform: scale(1.18); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-8px); }
+      75%     { transform: translateX(8px); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <span></span>
+  <h2>機器到算式</h2>
+  <span></span>
+</div>
+<nav class="act-bar">
+  <a class="act-btn" href="mul.html"><span class="act-icon">🔵</span>乘除關係</a>
+  <a class="act-btn" href="machine.html"><span class="act-icon">⚙️</span>倍機器</a>
+  <a class="act-btn act-on" href="bridge.html"><span class="act-icon">🌉</span>機器到算式</a>
+  <a class="act-btn" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
+  <a class="act-btn" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- Phase tabs -->
+  <div class="phase-bar">
+    <div class="ph-tab active" id="tab-a">🤝 A<br>機器讀算式</div>
+    <div class="ph-tab locked" id="tab-b">🎯 B<br>認方向</div>
+    <div class="ph-tab locked" id="tab-c">⭐ C<br>獨立解題</div>
+  </div>
+
+  <!-- ════ Phase A ════ -->
+  <div class="ph-panel show" id="panel-a">
+    <div class="prog-dots" id="a-dots"></div>
+
+    <div class="ph-label">
+      <div class="ph-badge badge-a">A</div>
+      <div class="ph-label-text">機器上的「?」就是算式裡的「□」——填一個，兩邊都會出現答案</div>
+    </div>
+
+    <div class="card">
+      <div class="a-layout" id="a-layout"><!-- JS --></div>
+    </div>
+
+    <div class="np-wrap">
+      <div class="np-disp" id="a-disp">—</div>
+      <div class="np-grid">
+        <button class="nk d" onclick="nk('a',7)">7</button>
+        <button class="nk d" onclick="nk('a',8)">8</button>
+        <button class="nk d" onclick="nk('a',9)">9</button>
+        <button class="nk d" onclick="nk('a',4)">4</button>
+        <button class="nk d" onclick="nk('a',5)">5</button>
+        <button class="nk d" onclick="nk('a',6)">6</button>
+        <button class="nk d" onclick="nk('a',1)">1</button>
+        <button class="nk d" onclick="nk('a',2)">2</button>
+        <button class="nk d" onclick="nk('a',3)">3</button>
+        <button class="nk bs" onclick="nb('a')">⌫</button>
+        <button class="nk d" onclick="nk('a',0)">0</button>
+        <button class="nk ok" id="a-ok" onclick="nc('a')" disabled>✓</button>
+      </div>
+    </div>
+
+    <div class="done-banner" id="a-done">
+      <div class="done-title">🎉 你發現了！</div>
+      <div class="done-sub">
+        機器上的「?」就是算式裡的「□」。<br>
+        接下來，試試看不靠機器，自己判斷方向！
+      </div>
+      <button class="done-btn" onclick="gotoPhase('b')">下一關：認方向 →</button>
+    </div>
+  </div>
+
+  <!-- ════ Phase B ════ -->
+  <div class="ph-panel" id="panel-b">
+    <div class="prog-dots" id="b-dots"></div>
+
+    <div class="ph-label">
+      <div class="ph-badge badge-b">B</div>
+      <div class="ph-label-text">先判斷：□ 是在積的位置，還是因數的位置？</div>
+    </div>
+
+    <div class="card">
+      <div class="eq-row" id="b-eq-row"><!-- JS --></div>
+    </div>
+
+    <div class="dir-row">
+      <button class="dir-btn fwd-style" id="b-fwd" onclick="bPick('fwd')">
+        <div class="db-icon">→</div>
+        <div class="db-main">□ 是積</div>
+        <div class="db-sub">用乘法找</div>
+      </button>
+      <button class="dir-btn rev-style" id="b-rev" onclick="bPick('rev')">
+        <div class="db-icon">←</div>
+        <div class="db-main">□ 是因數</div>
+        <div class="db-sub">用除法找</div>
+      </button>
+    </div>
+
+    <div class="hint-box" id="b-hint" style="display:none"></div>
+
+    <div class="np-wrap" id="b-np" style="display:none">
+      <div class="np-disp" id="b-disp">—</div>
+      <div class="np-grid">
+        <button class="nk d" onclick="nk('b',7)">7</button>
+        <button class="nk d" onclick="nk('b',8)">8</button>
+        <button class="nk d" onclick="nk('b',9)">9</button>
+        <button class="nk d" onclick="nk('b',4)">4</button>
+        <button class="nk d" onclick="nk('b',5)">5</button>
+        <button class="nk d" onclick="nk('b',6)">6</button>
+        <button class="nk d" onclick="nk('b',1)">1</button>
+        <button class="nk d" onclick="nk('b',2)">2</button>
+        <button class="nk d" onclick="nk('b',3)">3</button>
+        <button class="nk bs" onclick="nb('b')">⌫</button>
+        <button class="nk d" onclick="nk('b',0)">0</button>
+        <button class="nk ok" id="b-ok" onclick="nc('b')" disabled>✓</button>
+      </div>
+    </div>
+
+    <div class="done-banner" id="b-done">
+      <div class="done-title">👏 判斷得很好！</div>
+      <div class="done-sub">
+        □ 在因數位置 → 用除法找<br>
+        □ 在積的位置 → 用乘法找<br>
+        最後一關：沒有提示，你能自己解嗎？
+      </div>
+      <button class="done-btn" onclick="gotoPhase('c')">最後關卡 →</button>
+    </div>
+  </div>
+
+  <!-- ════ Phase C ════ -->
+  <div class="ph-panel" id="panel-c">
+    <div class="prog-dots" id="c-dots"></div>
+
+    <div class="ph-label">
+      <div class="ph-badge badge-c">C</div>
+      <div class="ph-label-text">自己來！不確定可以用「想一想」</div>
+    </div>
+
+    <div class="card">
+      <div class="eq-row" id="c-eq-row"><!-- JS --></div>
+    </div>
+
+    <div style="display:flex; justify-content:center;">
+      <button class="hint-btn" id="c-hbtn" onclick="cHint()">💡 想一想</button>
+    </div>
+
+    <div class="div-hint" id="c-dhint"></div>
+
+    <div class="np-wrap">
+      <div class="np-disp" id="c-disp">—</div>
+      <div class="np-grid">
+        <button class="nk d" onclick="nk('c',7)">7</button>
+        <button class="nk d" onclick="nk('c',8)">8</button>
+        <button class="nk d" onclick="nk('c',9)">9</button>
+        <button class="nk d" onclick="nk('c',4)">4</button>
+        <button class="nk d" onclick="nk('c',5)">5</button>
+        <button class="nk d" onclick="nk('c',6)">6</button>
+        <button class="nk d" onclick="nk('c',1)">1</button>
+        <button class="nk d" onclick="nk('c',2)">2</button>
+        <button class="nk d" onclick="nk('c',3)">3</button>
+        <button class="nk bs" onclick="nb('c')">⌫</button>
+        <button class="nk d" onclick="nk('c',0)">0</button>
+        <button class="nk ok" id="c-ok" onclick="nc('c')" disabled>✓</button>
+      </div>
+    </div>
+
+    <div class="final-banner" id="c-done">
+      <div class="final-title">🌟 全部完成！</div>
+      <div class="final-sub">
+        你已經從機器走到算式了。<br>
+        現在可以挑戰「找□的數」，獨立解開所有方程式！
+      </div>
+      <button class="final-btn" onclick="location.href='unknown.html'">挑戰找□的數 →</button>
+    </div>
+  </div>
+
+</div><!-- .wrap -->
+
+<script>
+// ── 題目資料 ──────────────────────────────────────────────────────
+
+// Phase A：×4 倍機器，dir='fwd'=找積，dir='rev'=找因數
+const A = [
+  { in:5,    out:null, dir:'fwd' },   // 5 × 4 = □  → 20
+  { in:null, out:28,   dir:'rev' },   // □ × 4 = 28 → 7
+  { in:6,    out:null, dir:'fwd' },   // 6 × 4 = □  → 24
+  { in:null, out:24,   dir:'rev' },   // □ × 4 = 24 → 6
+];
+const A_MUL = 4;
+
+// Phase B：算式方向辨認；a/b=null 代表 □；p=null 代表積是 □（正向）
+// 正向(fwd)：□ 是積；反向(rev)：□ 是因數
+const B = [
+  { a:5,    b:A_MUL, p:null },  // 5 × 4 = □  → fwd, ans=20
+  { a:null, b:6,     p:42   },  // □ × 6 = 42 → rev, ans=7
+  { a:7,    b:null,  p:56   },  // 7 × □ = 56 → rev, ans=8
+  { a:null, b:9,     p:45   },  // □ × 9 = 45 → rev, ans=5
+];
+
+// Phase C：純算式，全部都是找因數（延伸 unknown.html）
+const C = [
+  { a:null, b:4, p:36 },  // □ × 4 = 36 → 9
+  { a:3,    b:null, p:27 }, // 3 × □ = 27 → 9
+  { a:null, b:8, p:56 },  // □ × 8 = 56 → 7
+  { a:6,    b:null, p:48 }, // 6 × □ = 48 → 8
+];
+
+// ── 狀態 ─────────────────────────────────────────────────────────
+let aIdx=0, aIn='';
+let bIdx=0, bIn='', bPicked=false;
+let cIdx=0, cIn='', cLv=0;
+
+// ── Phase 切換 ──────────────────────────────────────────────────
+function gotoPhase(ph) {
+  ['a','b','c'].forEach(p => {
+    document.getElementById('panel-'+p).classList.remove('show');
+    const tab = document.getElementById('tab-'+p);
+    tab.className = 'ph-tab';
+    if (p === ph) tab.classList.add('active');
+    else if ((p==='a' && (ph==='b'||ph==='c')) || (p==='b' && ph==='c'))
+      tab.classList.add('done');
+    else tab.classList.add('locked');
+  });
+  document.getElementById('panel-'+ph).classList.add('show');
+  if (ph==='b') initB();
+  if (ph==='c') initC();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── 共用 numpad ──────────────────────────────────────────────────
+function nk(ph, n) {
+  const s = getS(ph);
+  if (s.v.length >= 2) return;
+  s.v += n;
+  document.getElementById(ph+'-disp').textContent = s.v || '—';
+  document.getElementById(ph+'-ok').disabled = !s.v;
+}
+function nb(ph) {
+  const s = getS(ph);
+  s.v = s.v.slice(0,-1);
+  document.getElementById(ph+'-disp').textContent = s.v || '—';
+  document.getElementById(ph+'-ok').disabled = !s.v;
+}
+function nc(ph) {
+  if (ph==='a') aConfirm();
+  else if (ph==='b') bConfirm();
+  else cConfirm();
+}
+
+// 狀態代理
+const state = {
+  a: { get v(){ return aIn; }, set v(x){ aIn=x; } },
+  b: { get v(){ return bIn; }, set v(x){ bIn=x; } },
+  c: { get v(){ return cIn; }, set v(x){ cIn=x; } },
+};
+function getS(ph) { return state[ph]; }
+
+function resetNp(ph) {
+  state[ph].v = '';
+  document.getElementById(ph+'-disp').textContent = '—';
+  document.getElementById(ph+'-ok').disabled = true;
+}
+
+// ── 動畫工具 ────────────────────────────────────────────────────
+function errAnim(el) {
+  if (!el) return;
+  el.classList.add('err');
+  setTimeout(() => el.classList.remove('err'), 400);
+}
+
+// ── Phase A ─────────────────────────────────────────────────────
+function aAns(r) { return r.dir==='fwd' ? r.in * A_MUL : r.out / A_MUL; }
+
+function renderA() {
+  const r = A[aIdx];
+  // 進度點
+  document.getElementById('a-dots').innerHTML =
+    A.map((_,i) => `<div class="pdot ${i<aIdx?'done':i===aIdx?'cur':''}"></div>`).join('');
+
+  const arCls = r.dir==='fwd' ? 'fwd' : 'rev';
+  const arCh  = r.dir==='fwd' ? '→' : '←';
+
+  // 機器
+  const inCls  = r.dir==='rev' ? 'undef' : 'known';
+  const outCls = r.dir==='fwd' ? 'undef' : 'known';
+  const inTxt  = r.dir==='rev' ? '?' : r.in;
+  const outTxt = r.dir==='fwd' ? '?' : r.out;
+
+  const machHTML = `
+    <div class="mini-mach">
+      <div class="ms ${inCls}" id="ms-in">${inTxt}</div>
+      <div class="m-arr ${arCls}">${arCh}</div>
+      <div class="m-body"><div class="mb-n">×${A_MUL}</div><div class="mb-s">機器</div></div>
+      <div class="m-arr ${arCls}">${arCh}</div>
+      <div class="ms ${outCls}" id="ms-out">${outTxt}</div>
+    </div>`;
+
+  // 算式
+  const lf = r.dir==='fwd' ? r.in  : null;  // null → □
+  const pv = r.dir==='fwd' ? null  : r.out;  // null → □
+  function ep(v, id) {
+    return v === null
+      ? `<div class="eq-box undef" id="${id}">□</div>`
+      : `<div class="eq-n">${v}</div>`;
+  }
+  const eqHTML = `
+    <div class="bridge-eq">
+      <div class="bridge-lbl">算式寫成</div>
+      <div class="eq-row">
+        ${ep(lf,'eq-lf')}
+        <div class="eq-op">×</div>
+        <div class="eq-n">${A_MUL}</div>
+        <div class="eq-op">=</div>
+        ${ep(pv,'eq-pv')}
+      </div>
+    </div>`;
+
+  document.getElementById('a-layout').innerHTML =
+    machHTML + `<div style="font-size:18px;color:#bbb;flex-shrink:0">≡</div>` + eqHTML;
+
+  resetNp('a');
+}
+
+function aConfirm() {
+  const r = A[aIdx];
+  const ans = aAns(r);
+  const entered = parseInt(aIn, 10);
+
+  if (entered === ans) {
+    // 機器槽
+    const msEl = document.getElementById(r.dir==='fwd' ? 'ms-out' : 'ms-in');
+    if (msEl) { msEl.textContent = ans; msEl.className = 'ms filled'; }
+    // 算式框
+    const eqEl = document.getElementById(r.dir==='fwd' ? 'eq-pv' : 'eq-lf');
+    if (eqEl) { eqEl.textContent = ans; eqEl.className = 'eq-box filled'; }
+    resetNp('a');
+    aIdx++;
+    if (aIdx >= A.length) setTimeout(() => document.getElementById('a-done').classList.add('show'), 700);
+    else setTimeout(renderA, 700);
+  } else {
+    errAnim(document.getElementById(r.dir==='fwd' ? 'ms-out' : 'ms-in'));
+    errAnim(document.getElementById(r.dir==='fwd' ? 'eq-pv'  : 'eq-lf'));
+    resetNp('a');
+  }
+}
+
+// ── Phase B ─────────────────────────────────────────────────────
+function bDir(r)  { return r.p === null ? 'fwd' : 'rev'; }
+function bAns(r) {
+  if (r.p === null) return r.a * r.b;          // □ = 積
+  if (r.a === null) return r.p / r.b;          // □ = 左因數
+  return r.p / r.a;                             // □ = 右因數
+}
+
+function initB() {
+  bIdx=0; bIn=''; bPicked=false;
+  renderB();
+}
+
+function renderB() {
+  const r = B[bIdx];
+  // 進度點
+  document.getElementById('b-dots').innerHTML =
+    B.map((_,i) => `<div class="pdot ${i<bIdx?'done':i===bIdx?'cur':''}"></div>`).join('');
+
+  // 算式
+  function ep(v) {
+    return v === null
+      ? `<div class="eq-box undef" id="b-box">□</div>`
+      : `<div class="eq-n">${v}</div>`;
+  }
+  document.getElementById('b-eq-row').innerHTML =
+    ep(r.a) + `<div class="eq-op">×</div>` +
+    ep(r.b) + `<div class="eq-op">=</div>` +
+    ep(r.p);
+
+  // 重設方向按鈕
+  bPicked = false;
+  document.getElementById('b-fwd').className = 'dir-btn fwd-style';
+  document.getElementById('b-rev').className = 'dir-btn rev-style';
+  document.getElementById('b-hint').style.display = 'none';
+  document.getElementById('b-np').style.display   = 'none';
+  resetNp('b');
+}
+
+function bPick(chosen) {
+  if (bPicked) return;
+  const r   = B[bIdx];
+  const dir = bDir(r);
+
+  if (chosen === dir) {
+    bPicked = true;
+    // 正確：標亮選中，淡化另一個
+    document.getElementById('b-fwd').className =
+      'dir-btn ' + (chosen==='fwd' ? 'fwd-style sel-fwd' : 'fwd-style dim');
+    document.getElementById('b-rev').className =
+      'dir-btn ' + (chosen==='rev' ? 'rev-style sel-rev' : 'rev-style dim');
+
+    // 提示框
+    const hb = document.getElementById('b-hint');
+    hb.style.display = 'flex';
+    if (chosen === 'fwd') {
+      hb.innerHTML = `直接算 <span class="h-m">${r.a}</span>`+
+        `<span class="h-op"> × </span><span class="h-m">${r.b}</span>`+
+        `<span class="h-op"> = </span><span class="h-q">□</span>`;
+    } else {
+      const known = r.a !== null ? r.a : r.b;
+      hb.innerHTML = `<span class="h-r">${r.p}</span>`+
+        `<span class="h-op"> ÷ </span><span class="h-m">${known}</span>`+
+        `<span class="h-op"> = </span><span class="h-q">□</span>`;
+    }
+    // 顯示 numpad
+    document.getElementById('b-np').style.display = 'block';
+
+  } else {
+    // 錯誤：抖動
+    const btn = document.getElementById(chosen==='fwd' ? 'b-fwd' : 'b-rev');
+    btn.classList.add('wrong');
+    setTimeout(() => btn.classList.remove('wrong'), 400);
+    errAnim(document.getElementById('b-box'));
+  }
+}
+
+function bConfirm() {
+  const r = B[bIdx];
+  const ans = bAns(r);
+  const entered = parseInt(bIn, 10);
+
+  if (entered === ans) {
+    const box = document.getElementById('b-box');
+    if (box) { box.textContent = ans; box.className = 'eq-box filled'; }
+    resetNp('b');
+    bIdx++;
+    if (bIdx >= B.length) setTimeout(() => document.getElementById('b-done').classList.add('show'), 700);
+    else setTimeout(renderB, 700);
+  } else {
+    errAnim(document.getElementById('b-box'));
+    resetNp('b');
+  }
+}
+
+// ── Phase C ─────────────────────────────────────────────────────
+function cAns(r) { return r.a === null ? r.p / r.b : r.p / r.a; }
+function cDivEq(r) {
+  const ans   = cAns(r);
+  const known = r.a !== null ? r.a : r.b;
+  return r.p + ' ÷ ' + known + ' = ' + ans;
+}
+
+function initC() {
+  cIdx=0; cIn=''; cLv=0;
+  renderC();
+}
+
+function renderC() {
+  const r = C[cIdx];
+  document.getElementById('c-dots').innerHTML =
+    C.map((_,i) => `<div class="pdot ${i<cIdx?'done':i===cIdx?'cur':''}"></div>`).join('');
+
+  function ep(v) {
+    return v === null
+      ? `<div class="eq-box undef" id="c-box">□</div>`
+      : `<div class="eq-n">${v}</div>`;
+  }
+  document.getElementById('c-eq-row').innerHTML =
+    ep(r.a) + `<div class="eq-op">×</div>` +
+    ep(r.b) + `<div class="eq-op">=</div>` +
+    `<div class="eq-n">${r.p}</div>`;
+
+  // 重設提示
+  cLv = 0;
+  const hb = document.getElementById('c-hbtn');
+  hb.className = 'hint-btn'; hb.disabled = false; hb.textContent = '💡 想一想';
+  const dh = document.getElementById('c-dhint');
+  dh.className = 'div-hint'; dh.textContent = '';
+  resetNp('c');
+}
+
+function cHint() {
+  const r = C[cIdx];
+  cLv++;
+  const hb = document.getElementById('c-hbtn');
+  const dh = document.getElementById('c-dhint');
+
+  if (cLv === 1) {
+    hb.className = 'hint-btn lv1'; hb.textContent = '💡 再提示';
+    dh.textContent = '□ 是因數 ← 用除法找';
+    dh.className = 'div-hint show';
+  } else {
+    hb.className = 'hint-btn lv2'; hb.disabled = true; hb.textContent = '提示已用完';
+    dh.textContent = cDivEq(r);
+    dh.className = 'div-hint show';
+  }
+}
+
+function cConfirm() {
+  const r = C[cIdx];
+  const ans = cAns(r);
+  const entered = parseInt(cIn, 10);
+
+  if (entered === ans) {
+    const box = document.getElementById('c-box');
+    if (box) { box.textContent = ans; box.className = 'eq-box filled'; }
+    resetNp('c');
+    cIdx++;
+    if (cIdx >= C.length) setTimeout(() => document.getElementById('c-done').classList.add('show'), 700);
+    else setTimeout(renderC, 700);
+  } else {
+    errAnim(document.getElementById('c-box'));
+    resetNp('c');
+  }
+}
+
+// ── 初始化 ───────────────────────────────────────────────────────
+renderA();
+</script>
+</body>
+</html>
