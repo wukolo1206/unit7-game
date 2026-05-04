@@ -111,7 +111,7 @@
     .dir-btn:active { opacity: .8; }
     .dir-btn .db-icon  { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
     .dir-btn .db-main  { font-size: 14px; font-weight: bold; }
-    .dir-btn .db-sub   { font-size: 11px; color: #888; margin-top: 2px; }
+    .dir-btn .db-sub   { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.6; }
     .dir-btn.fwd-style { border: 2.5px solid #ffd43b; }
     .dir-btn.rev-style { border: 2.5px solid #f783ac; }
     .dir-btn.fwd-style .db-icon { color: #b89600; }
@@ -280,12 +280,12 @@
       <button class="dir-btn fwd-style" id="b-fwd" onclick="bPick('fwd')">
         <div class="db-icon">→</div>
         <div class="db-main">□ 是積</div>
-        <div class="db-sub">用乘法找</div>
+        <div class="db-sub">知道每份是幾、重複幾次，<br>把每份乘以次數，就知道總數</div>
       </button>
       <button class="dir-btn rev-style" id="b-rev" onclick="bPick('rev')">
         <div class="db-icon">←</div>
         <div class="db-main">□ 是因數</div>
-        <div class="db-sub">用除法找</div>
+        <div class="db-sub">知道總數是重複了幾次得來的，<br>把總數平分回去，就知道每份是多少</div>
       </button>
     </div>
 
