@@ -139,6 +139,7 @@
   <a class="act-btn" href="bridge.html"><span class="act-icon">🌉</span>機器到算式</a>
   <a class="act-btn" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
   <a class="act-btn act-on" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
+  <a class="act-btn" href="verify.html"><span class="act-icon">✅</span>驗算</a>
 </nav>
 
 <div class="wrap">
@@ -190,14 +191,14 @@
 <script>
   // { a: left factor or null, b: right factor or null, p: product }
   const PROBLEMS = [
-    { a: null, b: 4, p: 28 },   // □ × 4 = 28  → 7
-    { a: 3,    b: null, p: 27 }, // 3 × □ = 27  → 9
-    { a: null, b: 6, p: 42 },   // □ × 6 = 42  → 7
-    { a: 8,    b: null, p: 56 }, // 8 × □ = 56  → 7
-    { a: null, b: 5, p: 45 },   // □ × 5 = 45  → 9
-    { a: 9,    b: null, p: 63 }, // 9 × □ = 63  → 7
-    { a: null, b: 7, p: 56 },   // □ × 7 = 56  → 8
-    { a: 6,    b: null, p: 48 }, // 6 × □ = 48  → 8
+    { a: null, b: 4,    p: 52  },  // □ × 4  = 52  → 13
+    { a: 6,    b: null, p: 78  },  // 6 × □  = 78  → 13
+    { a: null, b: 7,    p: 98  },  // □ × 7  = 98  → 14
+    { a: 5,    b: null, p: 85  },  // 5 × □  = 85  → 17
+    { a: null, b: 9,    p: 108 },  // □ × 9  = 108 → 12
+    { a: 8,    b: null, p: 112 },  // 8 × □  = 112 → 14
+    { a: null, b: 6,    p: 90  },  // □ × 6  = 90  → 15
+    { a: 7,    b: null, p: 126 },  // 7 × □  = 126 → 18
   ];
 
   let cur = 0;

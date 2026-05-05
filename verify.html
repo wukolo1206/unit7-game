@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>驗算練習</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav a { font-size: 14px; color: #666; text-decoration: none; }
+    .nav span { width: 60px; }
+    .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
+
+    .act-bar { display: flex; background: #fff; border-bottom: 2px solid #e8eeff;
+               overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .act-bar::-webkit-scrollbar { display: none; }
+    .act-btn { flex: 1; min-width: 72px; padding: 8px 4px 7px; border: none;
+               background: transparent; font-size: 12px; font-weight: bold;
+               color: #999; cursor: pointer; text-decoration: none;
+               display: flex; flex-direction: column; align-items: center; gap: 2px;
+               border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
+               -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+    .act-btn .act-icon { font-size: 16px; }
+    .act-btn:hover { color: #4a6cf7; }
+    .act-btn.act-on { color: #4a6cf7; border-bottom-color: #4a6cf7; background: #f5f7ff; }
+
+    .wrap { max-width: 780px; margin: 0 auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    .main-cols { display: flex; flex-direction: column; gap: 12px; }
+    @media (min-width: 560px) {
+      .main-cols { flex-direction: row; align-items: flex-start; }
+      .left-col  { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+      .right-col { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+    }
+
+    .eq-card { background: #fff; border-radius: 20px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.13); padding: 24px 20px;
+               display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+    .prog-dots { display: flex; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #dde3ff; transition: background .3s; }
+    .dot.done { background: #51cf66; }
+    .dot.cur  { background: #4a6cf7; }
+
+    /* 題目區 */
+    .prob-stmt { text-align: center; }
+    .prob-label { font-size: 12px; color: #aaa; margin-bottom: 6px; letter-spacing: 1px; }
+    .prob-eq { display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .prob-num { font-size: 36px; font-weight: bold; color: #333; }
+    .prob-op  { font-size: 28px; color: #aaa; font-weight: bold; }
+    .prob-box { width: 52px; height: 52px; border-radius: 10px; border: 3px dashed #e06b00;
+                background: #fff8f0; display: flex; align-items: center; justify-content: center;
+                font-size: 30px; font-weight: bold; color: #e06b00; }
+
+    /* 有人說的答案 */
+    .proposed-row { display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+                    background: #f3f0ff; border-radius: 12px; border-left: 4px solid #9775fa; }
+    .proposed-label { font-size: 14px; color: #7950f2; font-weight: bold; }
+    .proposed-val   { font-size: 22px; font-weight: bold; color: #7950f2; }
+
+    /* 驗算算式區 */
+    .verify-section { width: 100%; text-align: center; }
+    .verify-label { font-size: 13px; color: #888; margin-bottom: 10px; }
+    .verify-eq { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .v-num  { font-size: 32px; font-weight: bold; color: #4a6cf7; }
+    .v-op   { font-size: 26px; color: #aaa; }
+    .v-blank { width: 52px; height: 52px; border-radius: 12px; border: 2px dashed #4a6cf7;
+               background: #f5f7ff; display: flex; align-items: center; justify-content: center;
+               font-size: 28px; font-weight: bold; color: #4a6cf7;
+               animation: pulse2 1.4s ease-in-out infinite; }
+    .v-result { font-size: 34px; font-weight: bold; }
+    .v-result.ok  { color: #2f9e44; animation: popIn .35s cubic-bezier(.17,.67,.44,1.4) forwards; }
+    .v-result.bad { color: #c92a2a; animation: popIn .35s cubic-bezier(.17,.67,.44,1.4) forwards; }
+
+    @keyframes pulse2 {
+      0%,100% { box-shadow: 0 0 0 0 rgba(74,108,247,.35); }
+      50%      { box-shadow: 0 0 0 8px rgba(74,108,247,.0); }
+    }
+    @keyframes popIn {
+      0%   { transform: scale(.4); opacity: 0; }
+      70%  { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-9px); }
+      75%     { transform: translateX(9px); }
+    }
+    .shake { animation: shake .3s ease !important; }
+
+    /* 判斷結果 */
+    .judgment { display: none; text-align: center; }
+    .judgment.show { display: block; animation: fadeUp .4s ease; }
+    .judge-icon { font-size: 40px; margin-bottom: 6px; }
+    .judge-main { font-size: 17px; font-weight: bold; margin-bottom: 4px; }
+    .judge-main.ok  { color: #2f9e44; }
+    .judge-main.bad { color: #c92a2a; }
+    .judge-hint { font-size: 13px; color: #666; line-height: 1.6; }
+
+    .next-btn { border: none; border-radius: 14px; background: #4a6cf7; color: #fff;
+                font-size: 18px; font-weight: bold; padding: 13px 28px; cursor: pointer;
+                display: none; -webkit-tap-highlight-color: transparent; }
+    .next-btn.show { display: inline-block; }
+    .next-btn:active { opacity: .85; }
+
+    /* 右欄 */
+    .hint-box { background: #fff; border-radius: 14px; padding: 14px 16px;
+                box-shadow: 0 2px 8px rgba(74,108,247,.10); text-align: center;
+                font-size: 22px; font-weight: bold; color: #555; min-height: 56px;
+                display: flex; flex-direction: column; align-items: center;
+                justify-content: center; gap: 4px; }
+    .hint-sub { font-size: 12px; color: #aaa; font-weight: normal; }
+
+    .np-wrap { background: #fff; border-radius: 20px; padding: 12px;
+               box-shadow: 0 2px 12px rgba(74,108,247,.13); }
+    .np-display { font-size: 32px; font-weight: bold; color: #333; text-align: center;
+                  min-height: 44px; letter-spacing: 4px; margin-bottom: 10px; }
+    .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .nk { border: none; border-radius: 12px; font-size: 22px; font-weight: bold;
+          padding: 14px 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .nk:active { opacity: .75; }
+    .nk.d  { background: #f1f3ff; color: #333; }
+    .nk.bs { background: #ffe3e3; color: #c92a2a; font-size: 18px; }
+    .nk.ok { background: #51cf66; color: #fff; font-size: 18px; }
+    .nk.ok:disabled { background: #ccc; cursor: default; }
+
+    .done-banner { background: #fff; border-radius: 16px; padding: 20px;
+                   box-shadow: 0 2px 12px rgba(74,108,247,.13); text-align: center;
+                   display: none; }
+    .done-banner.show { display: block; animation: fadeUp .4s ease; }
+    .done-title { font-size: 24px; font-weight: bold; color: #2f9e44; margin-bottom: 8px; }
+    .done-sub   { font-size: 15px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+    .done-btn   { border: none; border-radius: 14px; background: #4a6cf7; color: #fff;
+                  font-size: 18px; font-weight: bold; padding: 13px 28px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <span></span>
+  <h2>驗算練習</h2>
+  <span></span>
+</div>
+<nav class="act-bar">
+  <a class="act-btn" href="mul.html"><span class="act-icon">🔵</span>乘除關係</a>
+  <a class="act-btn" href="machine.html"><span class="act-icon">⚙️</span>倍機器</a>
+  <a class="act-btn" href="bridge.html"><span class="act-icon">🌉</span>機器到算式</a>
+  <a class="act-btn" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
+  <a class="act-btn" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
+  <a class="act-btn act-on" href="verify.html"><span class="act-icon">✅</span>驗算</a>
+</nav>
+
+<div class="wrap">
+  <div class="main-cols">
+
+    <!-- 左欄：題目卡 -->
+    <div class="left-col">
+      <div class="eq-card">
+        <div class="prog-dots" id="progDots"></div>
+
+        <!-- 題目算式 -->
+        <div class="prob-stmt">
+          <div class="prob-label">題 目</div>
+          <div class="prob-eq" id="probEq"></div>
+        </div>
+
+        <!-- 別人的答案 -->
+        <div class="proposed-row">
+          <span class="proposed-label">有人說：□ =</span>
+          <span class="proposed-val" id="proposedVal"></span>
+        </div>
+
+        <!-- 驗算算式 -->
+        <div class="verify-section">
+          <div class="verify-label">驗算：把 □ 的答案代入算算看</div>
+          <div class="verify-eq" id="verifyEq"></div>
+        </div>
+
+        <!-- 判斷結果（答完後顯示） -->
+        <div class="judgment" id="judgment">
+          <div class="judge-icon" id="judgeIcon"></div>
+          <div class="judge-main" id="judgeMain"></div>
+          <div class="judge-hint" id="judgeHint"></div>
+        </div>
+
+        <button class="next-btn" id="nextBtn" onclick="nextProblem()">下一題 →</button>
+      </div>
+    </div>
+
+    <!-- 右欄：提示 + 數字鍵盤 + 完成 -->
+    <div class="right-col">
+      <div class="hint-box" id="hintBox">
+        <div id="hintMain"></div>
+        <div class="hint-sub" id="hintSub">算出結果後輸入</div>
+      </div>
+      <div class="np-wrap">
+        <div class="np-display" id="npDisp">—</div>
+        <div class="np-grid">
+          <button class="nk d" onclick="npKey(7)">7</button>
+          <button class="nk d" onclick="npKey(8)">8</button>
+          <button class="nk d" onclick="npKey(9)">9</button>
+          <button class="nk d" onclick="npKey(4)">4</button>
+          <button class="nk d" onclick="npKey(5)">5</button>
+          <button class="nk d" onclick="npKey(6)">6</button>
+          <button class="nk d" onclick="npKey(1)">1</button>
+          <button class="nk d" onclick="npKey(2)">2</button>
+          <button class="nk d" onclick="npKey(3)">3</button>
+          <button class="nk bs" onclick="npBack()">⌫</button>
+          <button class="nk d" onclick="npKey(0)">0</button>
+          <button class="nk ok" id="okBtn" onclick="npConfirm()" disabled>✓</button>
+        </div>
+      </div>
+      <div class="done-banner" id="doneBanner">
+        <div class="done-title">全部完成！</div>
+        <div class="done-sub">
+          把答案代回算式算算看——<br>這就是「驗算」！
+        </div>
+        <button class="done-btn" onclick="location.reload()">再練一次</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // a=null → □×b=p；b=null → a×□=p
+  // proposed = 有人宣稱 □ 等於這個數
+  const PROBLEMS = [
+    { a: null, b: 4,    p: 28,  proposed: 7  },  // 7×4=28   ✓
+    { a: null, b: 6,    p: 42,  proposed: 8  },  // 8×6=48≠42 ✗ (→7)
+    { a: 5,    b: null, p: 35,  proposed: 7  },  // 5×7=35   ✓
+    { a: null, b: 8,    p: 72,  proposed: 8  },  // 8×8=64≠72 ✗ (→9)
+    { a: null, b: 4,    p: 52,  proposed: 13 },  // 13×4=52  ✓  超過九九
+    { a: 7,    b: null, p: 98,  proposed: 13 },  // 7×13=91≠98 ✗ (→14)
+    { a: null, b: 6,    p: 78,  proposed: 13 },  // 13×6=78  ✓  超過九九
+    { a: 8,    b: null, p: 112, proposed: 15 },  // 8×15=120≠112 ✗ (→14)
+    { a: null, b: 9,    p: 108, proposed: 12 },  // 12×9=108 ✓  超過九九
+    { a: 7,    b: null, p: 126, proposed: 17 },  // 7×17=119≠126 ✗ (→18)
+  ];
+
+  let cur = 0;
+  let input = '';
+  let phase = 'answering'; // 'answering' | 'revealed'
+
+  function getKnown(p)        { return p.a !== null ? p.a : p.b; }
+  function getRealAns(p)      { return p.a === null ? p.p / p.b : p.p / p.a; }
+  function getVerifyResult(p) { return p.a === null ? p.proposed * p.b : p.a * p.proposed; }
+  function isProposedOk(p)    { return getVerifyResult(p) === p.p; }
+
+  function renderProbEq(p) {
+    const el = document.getElementById('probEq');
+    const num = (v) => '<span class="prob-num">' + v + '</span>';
+    const op  = (v) => '<span class="prob-op">' + v + '</span>';
+    const box = '<span class="prob-box">□</span>';
+    el.innerHTML =
+      (p.a === null ? box : num(p.a)) +
+      op('×') +
+      (p.b === null ? box : num(p.b)) +
+      op('=') +
+      num(p.p);
+  }
+
+  function renderVerifyEq(p, revealed) {
+    const el = document.getElementById('verifyEq');
+    const left   = p.a === null ? p.proposed : p.a;
+    const right  = p.b === null ? p.proposed : p.b;
+    const result = getVerifyResult(p);
+    const ok     = isProposedOk(p);
+    if (!revealed) {
+      el.innerHTML =
+        '<span class="v-num">' + left + '</span>' +
+        '<span class="v-op">×</span>' +
+        '<span class="v-num">' + right + '</span>' +
+        '<span class="v-op">=</span>' +
+        '<span class="v-blank">?</span>';
+    } else {
+      el.innerHTML =
+        '<span class="v-num">' + left + '</span>' +
+        '<span class="v-op">×</span>' +
+        '<span class="v-num">' + right + '</span>' +
+        '<span class="v-op">=</span>' +
+        '<span class="v-result ' + (ok ? 'ok' : 'bad') + '">' + result + '</span>';
+    }
+  }
+
+  function renderJudgment(p) {
+    const ok      = isProposedOk(p);
+    const result  = getVerifyResult(p);
+    const realAns = getRealAns(p);
+    const known   = getKnown(p);
+
+    document.getElementById('judgeIcon').textContent = ok ? '✅' : '❌';
+
+    const main = document.getElementById('judgeMain');
+    if (ok) {
+      main.textContent = result + ' = ' + p.p + '，答案正確！';
+      main.className = 'judge-main ok';
+      document.getElementById('judgeHint').textContent =
+        '□ = ' + p.proposed + ' 代入後算式成立';
+    } else {
+      main.textContent = result + ' ≠ ' + p.p + '，答案錯了！';
+      main.className = 'judge-main bad';
+      document.getElementById('judgeHint').innerHTML =
+        '正確應是 ' + p.p + ' ÷ ' + known + ' = ' + realAns +
+        '<br>所以 □ = ' + realAns;
+    }
+    document.getElementById('judgment').className = 'judgment show';
+  }
+
+  function renderDots() {
+    const dots = document.getElementById('progDots');
+    dots.innerHTML = '';
+    PROBLEMS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i < cur ? ' done' : i === cur ? ' cur' : '');
+      dots.appendChild(d);
+    });
+  }
+
+  function updateHint(p) {
+    const left  = p.a === null ? p.proposed : p.a;
+    const right = p.b === null ? p.proposed : p.b;
+    document.getElementById('hintMain').innerHTML =
+      '<span style="color:#7950f2;font-weight:bold">' + left + '</span>' +
+      '<span style="color:#aaa"> × </span>' +
+      '<span style="color:#7950f2;font-weight:bold">' + right + '</span>' +
+      '<span style="color:#aaa"> = ?</span>';
+  }
+
+  function loadProblem() {
+    const p = PROBLEMS[cur];
+    input = '';
+    phase = 'answering';
+    renderProbEq(p);
+    document.getElementById('proposedVal').textContent = p.proposed;
+    renderVerifyEq(p, false);
+    renderDots();
+    updateHint(p);
+    updateNpDisp();
+    document.getElementById('judgment').className = 'judgment';
+    document.getElementById('nextBtn').className = 'next-btn';
+    document.getElementById('doneBanner').className = 'done-banner';
+  }
+
+  function npKey(d) {
+    if (phase !== 'answering') return;
+    if (input.length >= 3) return;
+    input += d;
+    updateNpDisp();
+  }
+
+  function npBack() {
+    if (phase !== 'answering') return;
+    input = input.slice(0, -1);
+    updateNpDisp();
+  }
+
+  function updateNpDisp() {
+    document.getElementById('npDisp').textContent = input || '—';
+    document.getElementById('okBtn').disabled = (input === '' || phase !== 'answering');
+  }
+
+  function npConfirm() {
+    if (phase !== 'answering' || input === '') return;
+    const p = PROBLEMS[cur];
+    const expected = getVerifyResult(p);
+
+    if (parseInt(input) === expected) {
+      phase = 'revealed';
+      input = '';
+      updateNpDisp();
+      renderVerifyEq(p, true);
+      setTimeout(() => {
+        renderJudgment(p);
+        const isLast = cur >= PROBLEMS.length - 1;
+        if (!isLast) {
+          document.getElementById('nextBtn').className = 'next-btn show';
+        } else {
+          setTimeout(() => {
+            document.getElementById('doneBanner').className = 'done-banner show';
+          }, 500);
+        }
+      }, 300);
+    } else {
+      const verifyEl = document.getElementById('verifyEq');
+      verifyEl.classList.add('shake');
+      input = '';
+      updateNpDisp();
+      setTimeout(() => verifyEl.classList.remove('shake'), 350);
+    }
+  }
+
+  function nextProblem() {
+    cur++;
+    if (cur < PROBLEMS.length) loadProblem();
+  }
+
+  loadProblem();
+</script>
+</body>
+</html>
