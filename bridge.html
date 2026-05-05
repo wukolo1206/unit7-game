@@ -177,6 +177,16 @@
     .final-btn   { border: none; border-radius: 14px; background: #fff; color: #4a6cf7;
                    font-size: 16px; font-weight: bold; padding: 12px 26px; cursor: pointer; }
 
+    /* ── Story box ── */
+    .story-box { background: #fffbdd; border: 1.5px solid #ffd43b; border-radius: 14px;
+                 padding: 10px 16px; text-align: center; font-size: 15px;
+                 color: #555; line-height: 2; }
+    .s-kn  { font-size: 20px; font-weight: bold; color: #4a6cf7; }
+    .s-tot { font-size: 20px; font-weight: bold; color: #2f9e44; }
+    .s-uk  { font-size: 20px; font-weight: bold; color: #e06b00; }
+    .s-arr { color: #aaa; margin: 0 4px; }
+    .s-q   { font-size: 15px; font-weight: bold; color: #e06b00; }
+
     /* ── Animations ── */
     @keyframes pulse {
       0%,100% { box-shadow: 0 0 0 0 rgba(224,107,0,.35); }
@@ -232,6 +242,8 @@
       <div class="ph-label-text">機器上的「?」就是算式裡的「□」——填一個，兩邊都會出現答案</div>
     </div>
 
+    <div class="story-box" id="a-story"></div>
+
     <div class="card">
       <div class="a-layout" id="a-layout"><!-- JS --></div>
     </div>
@@ -272,6 +284,8 @@
       <div class="ph-badge badge-b">B</div>
       <div class="ph-label-text">先判斷：□ 是在積的位置，還是因數的位置？</div>
     </div>
+
+    <div class="story-box" id="b-story"></div>
 
     <div class="card">
       <div class="eq-row" id="b-eq-row"><!-- JS --></div>
@@ -329,6 +343,8 @@
       <div class="ph-badge badge-c">C</div>
       <div class="ph-label-text">自己來！不確定可以用「想一想」</div>
     </div>
+
+    <div class="story-box" id="c-story"></div>
 
     <div class="card">
       <div class="eq-row" id="c-eq-row"><!-- JS --></div>
@@ -403,6 +419,28 @@ const C = [
 let aIdx=0, aIn='';
 let bIdx=0, bIn='', bPicked=false;
 let cIdx=0, cIn='', cLv=0;
+
+// ── 情境句生成 ────────────────────────────────────────────────────
+// a/b/p 其中一個為 null 代表「□」（未知）
+function storyHTML(a, b, p) {
+  const kn  = (v) => '<span class="s-kn">'  + v + '</span>';
+  const tot = (v) => '<span class="s-tot">' + v + '</span>';
+  const arr = '<span class="s-arr">→</span>';
+
+  if (p === null) {
+    // □ = 積（正向）：已知每次幾個、重複幾次，求總數
+    return '一次放 ' + kn(a) + ' 個，重複 ' + kn(b) + ' 次' +
+           arr + '<span class="s-q">共放了幾個？</span>';
+  } else if (a === null) {
+    // □ = 被乘數：已知重複幾次、總數，求每次幾個
+    return '重複 ' + kn(b) + ' 次，共放了 ' + tot(p) + ' 個' +
+           arr + '<span class="s-q">每次放幾個？</span>';
+  } else {
+    // □ = 乘數：已知每次幾個、總數，求重複幾次
+    return '每次放 ' + kn(a) + ' 個，共 ' + tot(p) + ' 個' +
+           arr + '<span class="s-q">這個動作重複了幾次？</span>';
+  }
+}
 
 // ── Phase 切換 ──────────────────────────────────────────────────
 function gotoPhase(ph) {
@@ -512,6 +550,11 @@ function renderA() {
   document.getElementById('a-layout').innerHTML =
     machHTML + `<div style="font-size:18px;color:#bbb;flex-shrink:0">≡</div>` + eqHTML;
 
+  // 情境句：fwd → a=in, b=A_MUL, p=null；rev → a=null, b=A_MUL, p=out
+  const sa = r.dir === 'fwd' ? r.in  : null;
+  const sp = r.dir === 'fwd' ? null  : r.out;
+  document.getElementById('a-story').innerHTML = storyHTML(sa, A_MUL, sp);
+
   resetNp('a');
 }
 
@@ -567,6 +610,8 @@ function renderB() {
     ep(r.a) + `<div class="eq-op">×</div>` +
     ep(r.b) + `<div class="eq-op">=</div>` +
     ep(r.p);
+
+  document.getElementById('b-story').innerHTML = storyHTML(r.a, r.b, r.p);
 
   // 重設方向按鈕
   bPicked = false;
@@ -660,6 +705,8 @@ function renderC() {
     ep(r.a) + `<div class="eq-op">×</div>` +
     ep(r.b) + `<div class="eq-op">=</div>` +
     `<div class="eq-n">${r.p}</div>`;
+
+  document.getElementById('c-story').innerHTML = storyHTML(r.a, r.b, r.p);
 
   // 重設提示
   cLv = 0;
