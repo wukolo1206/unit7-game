@@ -30,6 +30,15 @@
     .wrap { max-width: 600px; margin: 0 auto; padding: 14px 12px;
             display: flex; flex-direction: column; gap: 12px; }
 
+    /* ── Group selector ── */
+    .group-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .gp { border: 2px solid #dde3ff; background: #fff; border-radius: 20px;
+          padding: 6px 14px; font-size: 14px; font-weight: bold; color: #888;
+          cursor: pointer; -webkit-tap-highlight-color: transparent;
+          transition: all .15s; }
+    .gp:active { opacity: .8; }
+    .gp.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+
     .prog-row { display: flex; align-items: center; gap: 10px; }
     .prog-label { font-size: 13px; color: #888; white-space: nowrap; }
     .prog-track { flex: 1; height: 6px; background: #dde3ff; border-radius: 3px; }
@@ -156,8 +165,11 @@
 </nav>
 
 <div class="wrap">
+  <!-- Group selector -->
+  <div class="group-bar" id="groupBar"></div>
+
   <div class="prog-row">
-    <span class="prog-label" id="progLabel">1 / 30</span>
+    <span class="prog-label" id="progLabel">1 / 5</span>
     <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
   </div>
 
@@ -303,9 +315,46 @@ const PROBLEMS = [
     rv:5, tv:755, rt:'count' },
 ];
 
+// ── Group state ──────────────────────────────────────────
+const GROUP_SIZE = 5;
+const NUM_GROUPS = Math.ceil(PROBLEMS.length / GROUP_SIZE); // 6
+
+let curGroup = 0;   // 0-based group index
+let groupProbs = []; // slice of PROBLEMS for current group
+
+function buildGroupBar() {
+  const bar = document.getElementById('groupBar');
+  bar.innerHTML = '';
+  for (let g = 0; g < NUM_GROUPS; g++) {
+    const start = g * GROUP_SIZE + 1;
+    const end   = Math.min(start + GROUP_SIZE - 1, PROBLEMS.length);
+    const btn = document.createElement('button');
+    btn.className = 'gp' + (g === curGroup ? ' on' : '');
+    btn.textContent = start + '–' + end;
+    btn.onclick = () => { curGroup = g; initGroup(); };
+    btn.id = 'gp-' + g;
+    bar.appendChild(btn);
+  }
+}
+
+function refreshGroupBar() {
+  document.querySelectorAll('.gp').forEach((b, i) => {
+    b.classList.toggle('on', i === curGroup);
+  });
+}
+
+function initGroup() {
+  const start = curGroup * GROUP_SIZE;
+  groupProbs = PROBLEMS.slice(start, start + GROUP_SIZE);
+  cur = 0;
+  refreshGroupBar();
+  loadProblem();
+}
+
+// ── Problem state ─────────────────────────────────────────
 let cur = 0;
 let shuffled = [];
-let selCard = null;   // { el, cardObj }
+let selCard = null;
 let placed = { each: null, count: null, total: null };
 let done = false;
 
@@ -325,12 +374,13 @@ function cardHTML(c) {
 }
 
 function loadProblem() {
-  const p = PROBLEMS[cur];
+  const p = groupProbs[cur];
   done = false; selCard = null; placed = { each: null, count: null, total: null };
   shuffled = shuffle(p.cards);
 
-  document.getElementById('progLabel').textContent = (cur + 1) + ' / ' + PROBLEMS.length;
-  document.getElementById('progFill').style.width = (cur / PROBLEMS.length * 100) + '%';
+  const total = groupProbs.length;
+  document.getElementById('progLabel').textContent = (cur + 1) + ' / ' + total;
+  document.getElementById('progFill').style.width = (cur / total * 100) + '%';
   document.getElementById('problemText').textContent = p.text;
   document.getElementById('mainCard').style.display = '';
   document.getElementById('doneBanner').className = 'done-banner';
@@ -406,7 +456,7 @@ function checkMatch() {
     ['each', 'count', 'total'].forEach(r => {
       document.getElementById('zs-' + r).className = 'zone-slot correct-' + r;
     });
-    const p = PROBLEMS[cur];
+    const p = groupProbs[cur];
     const ans = Math.round(p.tv / p.rv);
     const eqText = p.rt === 'each'
       ? p.rv + ' × □ = ' + p.tv + ' ✓'
@@ -417,7 +467,7 @@ function checkMatch() {
       document.getElementById('eqHint').textContent = '除法驗算：' + p.tv + ' ÷ ' + p.rv + ' = ' + ans;
       document.getElementById('eqReveal').className = 'eq-reveal show';
       const btn = document.getElementById('nextBtn');
-      btn.textContent = cur < PROBLEMS.length - 1 ? '下一題 →' : '完成！🎉';
+      btn.textContent = cur < groupProbs.length - 1 ? '下一題 →' : '完成！🎉';
       btn.className = 'next-btn show';
     }, 500);
 
@@ -442,11 +492,11 @@ function checkMatch() {
 
 function nextProblem() {
   cur++;
-  if (cur >= PROBLEMS.length) {
+  if (cur >= groupProbs.length) {
     document.getElementById('mainCard').style.display = 'none';
     document.getElementById('doneBanner').className = 'done-banner show';
     document.getElementById('progFill').style.width = '100%';
-    document.getElementById('progLabel').textContent = PROBLEMS.length + ' / ' + PROBLEMS.length;
+    document.getElementById('progLabel').textContent = groupProbs.length + ' / ' + groupProbs.length;
   } else {
     loadProblem();
   }
@@ -461,7 +511,8 @@ function showToast(msg) {
   toastT = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-loadProblem();
+buildGroupBar();
+initGroup();
 </script>
 </body>
 </html>
