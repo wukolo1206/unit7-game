@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>應用題分析</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #f0f4ff; min-height: 100vh;
+           -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+    .nav { display: flex; justify-content: space-between; align-items: center;
+           padding: 10px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .nav a { font-size: 14px; color: #666; text-decoration: none; }
+    .nav span { width: 60px; }
+    .nav h2 { font-size: 16px; color: #333; font-weight: bold; }
+
+    .act-bar { display: flex; background: #fff; border-bottom: 2px solid #e8eeff;
+               overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .act-bar::-webkit-scrollbar { display: none; }
+    .act-btn { flex: 1; min-width: 68px; padding: 8px 4px 7px; border: none;
+               background: transparent; font-size: 11px; font-weight: bold; color: #999;
+               cursor: pointer; text-decoration: none;
+               display: flex; flex-direction: column; align-items: center; gap: 2px;
+               border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
+               white-space: nowrap; }
+    .act-btn .act-icon { font-size: 15px; }
+    .act-btn.act-on { color: #7c3aed; border-bottom-color: #7c3aed; background: #f8f5ff; }
+
+    .wrap { max-width: 600px; margin: 0 auto; padding: 14px 12px;
+            display: flex; flex-direction: column; gap: 12px; }
+
+    .prog-row { display: flex; align-items: center; gap: 10px; }
+    .prog-label { font-size: 13px; color: #888; white-space: nowrap; }
+    .prog-track { flex: 1; height: 6px; background: #dde3ff; border-radius: 3px; }
+    .prog-fill  { height: 100%; background: #7c3aed; border-radius: 3px; transition: width .4s; }
+
+    /* Main card */
+    .main-card { background: #fff; border-radius: 20px;
+                 box-shadow: 0 2px 16px rgba(124,58,237,.12); padding: 20px 18px;
+                 display: flex; flex-direction: column; gap: 18px; }
+
+    .problem-text { font-size: 17px; line-height: 1.9; color: #333;
+                    padding-bottom: 14px; border-bottom: 1px dashed #e0e0e0; }
+
+    .phase-q { font-size: 14px; font-weight: bold; color: #666; text-align: center; }
+
+    /* ── Card pool ── */
+    .card-pool { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+                 min-height: 52px; }
+
+    .qty-card { border: 2px solid #c4b5fd; border-radius: 12px; padding: 10px 14px;
+                font-size: 16px; font-weight: bold; color: #555; cursor: pointer;
+                background: #faf8ff; transition: all .2s; text-align: center;
+                user-select: none; line-height: 1.4; }
+    .qty-card:active { transform: scale(.95); }
+    .qty-card.selected { border-color: #e06b00; background: #fff3e6; color: #e06b00;
+                          box-shadow: 0 0 0 3px rgba(224,107,0,.18); }
+    .qty-card.gone { visibility: hidden; pointer-events: none; }
+    .qty-card.err  { animation: shake .3s ease; }
+
+    /* ── Equation zones (matching + equation in one row) ── */
+    .eq-zones { display: flex; align-items: center; justify-content: center;
+                gap: 6px; flex-wrap: wrap; }
+
+    .zone-group { display: flex; flex-direction: column; align-items: center; gap: 5px;
+                  flex: 1; min-width: 80px; max-width: 140px; }
+
+    .zone-lbl { font-size: 11px; font-weight: bold; padding: 4px 6px; border-radius: 10px;
+                text-align: center; line-height: 1.4; width: 100%; }
+    .zone-lbl.each  { background: #d3f9d8; color: #2f9e44; }
+    .zone-lbl.count { background: #dbe4ff; color: #4263eb; }
+    .zone-lbl.total { background: #ffe8cc; color: #e06b00; }
+
+    .zone-slot { width: 100%; min-height: 58px; border: 2px dashed #ddd; border-radius: 12px;
+                 display: flex; align-items: center; justify-content: center;
+                 font-size: 15px; font-weight: bold; color: #bbb; cursor: pointer;
+                 transition: border-color .2s, background .2s;
+                 background: #fafafa; padding: 6px; text-align: center; line-height: 1.3; }
+    .zone-slot.ready  { border-color: #c4b5fd; color: #bbb; }
+    .zone-slot.filled { border-style: solid; border-color: #7c3aed;
+                        background: #f4f0ff; color: #5b21b6; }
+    .zone-slot.correct-each  { border-color: #2f9e44; border-style: solid;
+                                background: #f3fdf5; color: #2f9e44;
+                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.correct-count { border-color: #4263eb; border-style: solid;
+                                background: #f0f4ff; color: #4263eb;
+                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.correct-total { border-color: #e06b00; border-style: solid;
+                                background: #fff8f0; color: #e06b00;
+                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.err { animation: shake .3s ease; border-color: #ff6b6b !important; }
+
+    .eq-sym { font-size: 28px; color: #aaa; font-weight: bold; flex-shrink: 0;
+              padding-top: 22px; } /* align with slot, offset by label height */
+
+    /* ── Equation reveal ── */
+    .eq-reveal { text-align: center; display: none; padding: 4px 0; }
+    .eq-reveal.show { display: block; animation: fadeUp .4s ease; }
+    .eq-formal { font-size: 22px; font-weight: bold; color: #7c3aed; margin-bottom: 5px; }
+    .eq-hint   { font-size: 13px; color: #888; }
+
+    /* Next button */
+    .next-btn { border: none; border-radius: 14px; background: #7c3aed; color: #fff;
+                font-size: 18px; font-weight: bold; padding: 13px; cursor: pointer;
+                display: none; width: 100%; }
+    .next-btn.show { display: block; animation: fadeUp .4s ease; }
+    .next-btn:active { opacity: .85; }
+
+    /* Done */
+    .done-banner { background: #fff; border-radius: 20px; padding: 28px 20px;
+                   box-shadow: 0 2px 16px rgba(124,58,237,.12); text-align: center; display: none; }
+    .done-banner.show { display: block; animation: fadeUp .5s ease; }
+    .done-title { font-size: 26px; font-weight: bold; color: #2f9e44; margin-bottom: 10px; }
+    .done-sub   { font-size: 15px; color: #666; line-height: 1.7; margin-bottom: 20px; }
+    .done-btn   { border: none; border-radius: 14px; background: #7c3aed; color: #fff;
+                  font-size: 17px; font-weight: bold; padding: 13px 32px; cursor: pointer; }
+
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+             background: rgba(0,0,0,.72); color: #fff; padding: 10px 22px;
+             border-radius: 20px; font-size: 15px; font-weight: bold;
+             opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+
+    @keyframes popIn {
+      0%   { transform: scale(.88); opacity: .6; }
+      65%  { transform: scale(1.06); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-10px); }
+      75%     { transform: translateX(10px); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">← 首頁</a>
+  <h2>應用題分析</h2>
+  <span></span>
+</div>
+<nav class="act-bar">
+  <a class="act-btn" href="mul.html"><span class="act-icon">🔵</span>乘除關係</a>
+  <a class="act-btn" href="machine.html"><span class="act-icon">⚙️</span>倍機器</a>
+  <a class="act-btn" href="bridge.html"><span class="act-icon">🌉</span>機器算式</a>
+  <a class="act-btn" href="inverse.html"><span class="act-icon">🔍</span>互逆發現</a>
+  <a class="act-btn" href="unknown.html"><span class="act-icon">□</span>找□的數</a>
+  <a class="act-btn" href="verify.html"><span class="act-icon">✅</span>驗算</a>
+  <a class="act-btn act-on" href="analyze.html"><span class="act-icon">📝</span>應用題</a>
+</nav>
+
+<div class="wrap">
+  <div class="prog-row">
+    <span class="prog-label" id="progLabel">1 / 30</span>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="main-card" id="mainCard">
+    <div class="problem-text" id="problemText"></div>
+
+    <div class="phase-q">把三個數量放進正確的格子！</div>
+
+    <!-- Card pool -->
+    <div class="card-pool" id="cardPool"></div>
+
+    <!-- Equation zones -->
+    <div class="eq-zones">
+      <div class="zone-group">
+        <div class="zone-lbl each">每次的數量</div>
+        <div class="zone-slot" id="zs-each" onclick="zoneClick('each')"></div>
+      </div>
+      <div class="eq-sym">×</div>
+      <div class="zone-group">
+        <div class="zone-lbl count">重複的次數</div>
+        <div class="zone-slot" id="zs-count" onclick="zoneClick('count')"></div>
+      </div>
+      <div class="eq-sym">=</div>
+      <div class="zone-group">
+        <div class="zone-lbl total">總共的數量</div>
+        <div class="zone-slot" id="zs-total" onclick="zoneClick('total')"></div>
+      </div>
+    </div>
+
+    <!-- Equation reveal (after correct match) -->
+    <div class="eq-reveal" id="eqReveal">
+      <div class="eq-formal" id="eqFormal"></div>
+      <div class="eq-hint"   id="eqHint"></div>
+    </div>
+
+    <button class="next-btn" id="nextBtn" onclick="nextProblem()"></button>
+  </div>
+
+  <div class="done-banner" id="doneBanner">
+    <div class="done-title">全部完成！🎉</div>
+    <div class="done-sub">
+      每道題都有「每次的數量 × 重複的次數 = 總共的數量」，<br>
+      掌握三個角色，應用題就能輕鬆列式！
+    </div>
+    <button class="done-btn" onclick="location.reload()">再練一次</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// rt:'each'  → 每次的數量(known) × 重複的次數(□) = 總共, eq: rv × □ = tv
+// rt:'count' → 每次的數量(□) × 重複的次數(known) = 總共, eq: □ × rv = tv
+const PROBLEMS = [
+  { text:'成衣廠做了一些衣服，共用了 276 顆扣子。一件衣服需要 6 顆扣子，成衣廠做了多少件衣服？',
+    cards:[{label:'6顆',role:'each'},{label:'？件',role:'count'},{label:'276顆',role:'total'}],
+    rv:6, tv:276, rt:'each' },
+  { text:'每個紙箱裝的書都一樣多，書店裝了 6 個紙箱，共裝了 168 本，每個紙箱裝了幾本書？',
+    cards:[{label:'？本',role:'each'},{label:'6箱',role:'count'},{label:'168本',role:'total'}],
+    rv:6, tv:168, rt:'count' },
+  { text:'相簿每頁可以放 6 張照片，要放幾頁才可以放滿 162 張照片？',
+    cards:[{label:'6張',role:'each'},{label:'？頁',role:'count'},{label:'162張',role:'total'}],
+    rv:6, tv:162, rt:'each' },
+  { text:'玩一次夾娃娃要付 4 枚代幣，欣茹共付了 148 枚代幣，欣茹共玩了幾次夾娃娃？',
+    cards:[{label:'4枚',role:'each'},{label:'？次',role:'count'},{label:'148枚',role:'total'}],
+    rv:4, tv:148, rt:'each' },
+  { text:'欣芳每天搭公車的車費都一樣，搭了 6 天共花了 108 元，欣芳一天搭公車花多少元？',
+    cards:[{label:'？元',role:'each'},{label:'6天',role:'count'},{label:'108元',role:'total'}],
+    rv:6, tv:108, rt:'count' },
+  { text:'一頂帽子價格的 4 倍剛好和一件 360 元的上衣一樣，一頂帽子多少元？',
+    cards:[{label:'？元',role:'each'},{label:'4倍',role:'count'},{label:'360元',role:'total'}],
+    rv:4, tv:360, rt:'count' },
+  { text:'一件衣服 350 元，一件衣服的價錢剛好是一雙襪子的 7 倍，一雙襪子多少元？',
+    cards:[{label:'？元',role:'each'},{label:'7倍',role:'count'},{label:'350元',role:'total'}],
+    rv:7, tv:350, rt:'count' },
+  { text:'投籃遊戲，投進一球得 3 分，宥廷投進一些球共得到 36 分，他投進幾球？',
+    cards:[{label:'3分',role:'each'},{label:'？球',role:'count'},{label:'36分',role:'total'}],
+    rv:3, tv:36, rt:'each' },
+  { text:'放學路隊每一排人數都一樣，三年級排了 8 排，共有 336 人，每一排有幾人？',
+    cards:[{label:'？人',role:'each'},{label:'8排',role:'count'},{label:'336人',role:'total'}],
+    rv:8, tv:336, rt:'count' },
+  { text:'一包饅頭 72 元，一包饅頭的價錢剛好是一瓶發酵乳的 6 倍，一瓶發酵乳多少元？',
+    cards:[{label:'？元',role:'each'},{label:'6倍',role:'count'},{label:'72元',role:'total'}],
+    rv:6, tv:72, rt:'count' },
+  { text:'糖果店一枝棒棒糖 8 元，下午賣掉一些棒棒糖，共賣了 456 元，賣了多少枝棒棒糖？',
+    cards:[{label:'8元',role:'each'},{label:'？枝',role:'count'},{label:'456元',role:'total'}],
+    rv:8, tv:456, rt:'each' },
+  { text:'小珍每天練習寫相同字數的書法，9 天共寫了 162 個字，一天寫幾個字？',
+    cards:[{label:'？個字',role:'each'},{label:'9天',role:'count'},{label:'162個字',role:'total'}],
+    rv:9, tv:162, rt:'count' },
+  { text:'每包色紙有 8 張，永森買了一些共有 272 張，永森買了幾包色紙？',
+    cards:[{label:'8張',role:'each'},{label:'？包',role:'count'},{label:'272張',role:'total'}],
+    rv:8, tv:272, rt:'each' },
+  { text:'柏宇每天存一樣多的錢，存了 5 天共存了 100 元，他一天存多少元？',
+    cards:[{label:'？元',role:'each'},{label:'5天',role:'count'},{label:'100元',role:'total'}],
+    rv:5, tv:100, rt:'count' },
+  { text:'一盒有 8 顆巧克力，買了若干盒共買了 360 顆，同樂會共買了幾盒巧克力？',
+    cards:[{label:'8顆',role:'each'},{label:'？盒',role:'count'},{label:'360顆',role:'total'}],
+    rv:8, tv:360, rt:'each' },
+  { text:'哥哥和好朋友共 8 個人，每人出一樣多的錢，剛好可以買 112 元的筆記本送老師，每個人出多少元？',
+    cards:[{label:'？元',role:'each'},{label:'8人',role:'count'},{label:'112元',role:'total'}],
+    rv:8, tv:112, rt:'count' },
+  { text:'一顆茶葉蛋 9 元，阿婆賣了幾顆時剛好賣了 378 元？',
+    cards:[{label:'9元',role:'each'},{label:'？顆',role:'count'},{label:'378元',role:'total'}],
+    rv:9, tv:378, rt:'each' },
+  { text:'玩具店裡，一個玩偶價錢的 6 倍剛好和一個 450 元的機器人一樣，一個玩偶要多少元？',
+    cards:[{label:'？元',role:'each'},{label:'6倍',role:'count'},{label:'450元',role:'total'}],
+    rv:6, tv:450, rt:'count' },
+  { text:'羽彤每天存 8 元，存了幾天後剛好可以存到 200 元？',
+    cards:[{label:'8元',role:'each'},{label:'？天',role:'count'},{label:'200元',role:'total'}],
+    rv:8, tv:200, rt:'each' },
+  { text:'一箱玉米罐頭有 6 罐，老闆買了若干箱共有 750 罐，老闆買了幾箱玉米罐頭？',
+    cards:[{label:'6罐',role:'each'},{label:'？箱',role:'count'},{label:'750罐',role:'total'}],
+    rv:6, tv:750, rt:'each' },
+  { text:'一條手鍊要 9 顆珠子，品妍做了一些手鍊共用掉 135 顆珠子，她做了幾條手鍊？',
+    cards:[{label:'9顆',role:'each'},{label:'？條',role:'count'},{label:'135顆',role:'total'}],
+    rv:9, tv:135, rt:'each' },
+  { text:'一枝筆 9 元，老師買幾枝筆時剛好要付 297 元？',
+    cards:[{label:'9元',role:'each'},{label:'？枝',role:'count'},{label:'297元',role:'total'}],
+    rv:9, tv:297, rt:'each' },
+  { text:'快樂國小排椅子，每一橫排一樣多，排了 8 排，一共有 296 張椅子，每一橫排有幾張椅子？',
+    cards:[{label:'？張',role:'each'},{label:'8排',role:'count'},{label:'296張',role:'total'}],
+    rv:8, tv:296, rt:'count' },
+  { text:'姐姐練習書法，每天用毛筆寫一樣多的字，1 星期寫了 238 個字，姐姐每天寫幾個字？',
+    cards:[{label:'？個字',role:'each'},{label:'7天',role:'count'},{label:'238個字',role:'total'}],
+    rv:7, tv:238, rt:'count' },
+  { text:'老師買了 7 本一樣的年曆，一共付了 273 元，一本年曆要多少元？',
+    cards:[{label:'？元',role:'each'},{label:'7本',role:'count'},{label:'273元',role:'total'}],
+    rv:7, tv:273, rt:'count' },
+  { text:'爺爺買了 9 盒月餅，一共有 216 個月餅，每盒有幾個月餅？',
+    cards:[{label:'？個',role:'each'},{label:'9盒',role:'count'},{label:'216個',role:'total'}],
+    rv:9, tv:216, rt:'count' },
+  { text:'哥哥每天看 9 頁故事書，幾天可以把一本 126 頁的故事書看完？',
+    cards:[{label:'9頁',role:'each'},{label:'？天',role:'count'},{label:'126頁',role:'total'}],
+    rv:9, tv:126, rt:'each' },
+  { text:'一顆彈珠 8 元，堂妹付了 500 元，還不夠 36 元，堂妹買了多少顆彈珠？',
+    cards:[{label:'8元',role:'each'},{label:'？顆',role:'count'},{label:'536元',note:'500＋36',role:'total'}],
+    rv:8, tv:536, rt:'each' },
+  { text:'伯父買了 3 條相同款式的皮帶，付了 900 元，找回 57 元，一條皮帶要多少元？',
+    cards:[{label:'？元',role:'each'},{label:'3條',role:'count'},{label:'843元',note:'900－57',role:'total'}],
+    rv:3, tv:843, rt:'count' },
+  { text:'每盒水彩的價錢都相同，芳蓉買 5 盒，付了 800 元，找回 45 元，一盒水彩要多少元？',
+    cards:[{label:'？元',role:'each'},{label:'5盒',role:'count'},{label:'755元',note:'800－45',role:'total'}],
+    rv:5, tv:755, rt:'count' },
+];
+
+let cur = 0;
+let shuffled = [];
+let selCard = null;   // { el, cardObj }
+let placed = { each: null, count: null, total: null };
+let done = false;
+
+function shuffle(arr) {
+  const a = arr.map(c => Object.assign({}, c));
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function cardHTML(c) {
+  let h = c.label;
+  if (c.note) h += '<br><small style="font-size:11px;color:#999">（' + c.note + '）</small>';
+  return h;
+}
+
+function loadProblem() {
+  const p = PROBLEMS[cur];
+  done = false; selCard = null; placed = { each: null, count: null, total: null };
+  shuffled = shuffle(p.cards);
+
+  document.getElementById('progLabel').textContent = (cur + 1) + ' / ' + PROBLEMS.length;
+  document.getElementById('progFill').style.width = (cur / PROBLEMS.length * 100) + '%';
+  document.getElementById('problemText').textContent = p.text;
+  document.getElementById('mainCard').style.display = '';
+  document.getElementById('doneBanner').className = 'done-banner';
+
+  // Reset zones
+  ['each', 'count', 'total'].forEach(r => {
+    const s = document.getElementById('zs-' + r);
+    s.textContent = '';
+    s.className = 'zone-slot';
+  });
+
+  // Render pool
+  const pool = document.getElementById('cardPool');
+  pool.innerHTML = shuffled.map((c, i) =>
+    '<div class="qty-card" data-i="' + i + '" onclick="cardClick(this)">' + cardHTML(c) + '</div>'
+  ).join('');
+
+  // Reset reveal & button
+  document.getElementById('eqReveal').className = 'eq-reveal';
+  document.getElementById('nextBtn').className = 'next-btn';
+}
+
+function cardClick(el) {
+  if (el.classList.contains('gone') || done) return;
+  if (selCard && selCard.el === el) {
+    el.classList.remove('selected');
+    selCard = null;
+    return;
+  }
+  document.querySelectorAll('.qty-card').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selCard = { el, card: shuffled[parseInt(el.dataset.i)] };
+}
+
+function zoneClick(role) {
+  if (done) return;
+  const slot = document.getElementById('zs-' + role);
+  if (selCard) {
+    if (placed[role]) returnCard(placed[role], role);
+    placed[role] = selCard.card;
+    selCard.el.classList.remove('selected');
+    selCard.el.classList.add('gone');
+    slot.innerHTML = cardHTML(selCard.card);
+    slot.className = 'zone-slot filled';
+    selCard = null;
+    if (placed.each && placed.count && placed.total) checkMatch();
+  } else if (placed[role]) {
+    returnCard(placed[role], role);
+    placed[role] = null;
+  }
+}
+
+function returnCard(card, fromRole) {
+  const slot = document.getElementById('zs-' + fromRole);
+  slot.textContent = '';
+  slot.className = 'zone-slot';
+  placed[fromRole] = null;
+  // Un-hide matching pool card
+  document.querySelectorAll('.qty-card').forEach(el => {
+    if (shuffled[parseInt(el.dataset.i)].label === card.label) {
+      el.classList.remove('gone', 'selected');
+    }
+  });
+}
+
+function checkMatch() {
+  const allOk = placed.each.role === 'each' &&
+                placed.count.role === 'count' &&
+                placed.total.role === 'total';
+
+  if (allOk) {
+    done = true;
+    ['each', 'count', 'total'].forEach(r => {
+      document.getElementById('zs-' + r).className = 'zone-slot correct-' + r;
+    });
+    const p = PROBLEMS[cur];
+    const ans = Math.round(p.tv / p.rv);
+    const eqText = p.rt === 'each'
+      ? p.rv + ' × □ = ' + p.tv + ' ✓'
+      : '□ × ' + p.rv + ' = ' + p.tv + ' ✓';
+
+    setTimeout(() => {
+      document.getElementById('eqFormal').textContent = eqText;
+      document.getElementById('eqHint').textContent = '除法驗算：' + p.tv + ' ÷ ' + p.rv + ' = ' + ans;
+      document.getElementById('eqReveal').className = 'eq-reveal show';
+      const btn = document.getElementById('nextBtn');
+      btn.textContent = cur < PROBLEMS.length - 1 ? '下一題 →' : '完成！🎉';
+      btn.className = 'next-btn show';
+    }, 500);
+
+  } else {
+    // Shake wrong zones, return wrong cards
+    let wrongRoles = [];
+    ['each', 'count', 'total'].forEach(r => {
+      if (placed[r] && placed[r].role !== r) {
+        document.getElementById('zs-' + r).classList.add('err');
+        wrongRoles.push(r);
+      }
+    });
+    showToast('有些配錯了，再想想！');
+    setTimeout(() => {
+      wrongRoles.forEach(r => {
+        document.getElementById('zs-' + r).classList.remove('err');
+        if (placed[r]) { returnCard(placed[r], r); }
+      });
+    }, 500);
+  }
+}
+
+function nextProblem() {
+  cur++;
+  if (cur >= PROBLEMS.length) {
+    document.getElementById('mainCard').style.display = 'none';
+    document.getElementById('doneBanner').className = 'done-banner show';
+    document.getElementById('progFill').style.width = '100%';
+    document.getElementById('progLabel').textContent = PROBLEMS.length + ' / ' + PROBLEMS.length;
+  } else {
+    loadProblem();
+  }
+}
+
+let toastT = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+loadProblem();
+</script>
+</body>
+</html>
