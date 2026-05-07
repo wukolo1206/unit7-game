@@ -360,7 +360,7 @@ function refreshGroupBar() {
 
 function initGroup() {
   const start = curGroup * GROUP_SIZE;
-  groupProbs = PROBLEMS.slice(start, start + GROUP_SIZE);
+  groupProbs = shuffle(PROBLEMS.slice(start, start + GROUP_SIZE));
   cur = 0;
   refreshGroupBar();
   loadProblem();
