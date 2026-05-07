@@ -83,22 +83,34 @@
 
     .zone-slot { width: 100%; min-height: 58px; border: 2px dashed #ddd; border-radius: 12px;
                  display: flex; align-items: center; justify-content: center;
-                 font-size: 15px; font-weight: bold; color: #bbb; cursor: pointer;
+                 font-size: 15px; font-weight: bold; color: #bbb;
                  transition: border-color .2s, background .2s;
                  background: #fafafa; padding: 6px; text-align: center; line-height: 1.3; }
-    .zone-slot.ready  { border-color: #c4b5fd; color: #bbb; }
-    .zone-slot.filled { border-style: solid; border-color: #7c3aed;
-                        background: #f4f0ff; color: #5b21b6; }
-    .zone-slot.correct-each  { border-color: #2f9e44; border-style: solid;
-                                background: #f3fdf5; color: #2f9e44;
-                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
-    .zone-slot.correct-count { border-color: #4263eb; border-style: solid;
-                                background: #f0f4ff; color: #4263eb;
-                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
-    .zone-slot.correct-total { border-color: #e06b00; border-style: solid;
-                                background: #fff8f0; color: #e06b00;
-                                animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.active-zone { border-color: #7c3aed; border-style: dashed; cursor: pointer;
+                              animation: pulseZ 1.4s ease-in-out infinite; }
+    .zone-slot.inactive-zone { opacity: .3; pointer-events: none; cursor: default; }
+    .zone-slot.locked-each  { border-color: #2f9e44; border-style: solid; background: #f3fdf5;
+                               color: #2f9e44; pointer-events: none;
+                               animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.locked-count { border-color: #4263eb; border-style: solid; background: #f0f4ff;
+                               color: #4263eb; pointer-events: none;
+                               animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
+    .zone-slot.locked-total { border-color: #e06b00; border-style: solid; background: #fff8f0;
+                               color: #e06b00; pointer-events: none;
+                               animation: popIn .35s cubic-bezier(.17,.67,.44,1.4); }
     .zone-slot.err { animation: shake .3s ease; border-color: #ff6b6b !important; }
+
+    @keyframes pulseZ {
+      0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,.35); }
+      50%      { box-shadow: 0 0 0 8px rgba(124,58,237,.0); }
+    }
+
+    /* Step prompt */
+    .step-prompt { font-size: 14px; font-weight: bold; text-align: center;
+                   padding: 8px 14px; border-radius: 10px; transition: all .3s; }
+    .step-prompt.s0 { background: #d3f9d8; color: #2f9e44; }
+    .step-prompt.s1 { background: #dbe4ff; color: #4263eb; }
+    .step-prompt.s2 { background: #ffe8cc; color: #e06b00; }
 
     .eq-sym { font-size: 28px; color: #aaa; font-weight: bold; flex-shrink: 0;
               padding-top: 22px; } /* align with slot, offset by label height */
@@ -176,7 +188,7 @@
   <div class="main-card" id="mainCard">
     <div class="problem-text" id="problemText"></div>
 
-    <div class="phase-q">把三個數量放進正確的格子！</div>
+    <div class="step-prompt" id="stepPrompt"></div>
 
     <!-- Card pool -->
     <div class="card-pool" id="cardPool"></div>
@@ -351,13 +363,22 @@ function initGroup() {
   loadProblem();
 }
 
-// ── Problem state ─────────────────────────────────────────
-let cur = 0;
-let shuffled = [];
-let selCard = null;
-let placed = { each: null, count: null, total: null };
-let done = false;
+// ── Step config ───────────────────────────────────────────
+const STEP_ORDER  = ['each', 'count', 'total'];
+const STEP_LABELS = [
+  '第 1 步：哪個是「每次的數量」？',
+  '第 2 步：哪個是「重複的次數」？',
+  '第 3 步：哪個是「總共的數量」？',
+];
 
+// ── Problem state ─────────────────────────────────────────
+let cur      = 0;
+let step     = 0;   // 0=找each, 1=找count, 2=找total
+let shuffled = [];
+let selCard  = null;
+let done     = false;
+
+// ── Helpers ───────────────────────────────────────────────
 function shuffle(arr) {
   const a = arr.map(c => Object.assign({}, c));
   for (let i = a.length - 1; i > 0; i--) {
@@ -373,10 +394,18 @@ function cardHTML(c) {
   return h;
 }
 
+// 方案 B：自動生成干擾牌（答案數值 + 未知數的單位）
+function makeDecoy(p) {
+  const ans = Math.round(p.tv / p.rv);
+  const unknownCard = p.cards.find(c => c.label.includes('？'));
+  const unit = unknownCard ? unknownCard.label.replace('？', '') : '';
+  return { label: ans + unit, role: 'decoy' };
+}
+
+// ── Load problem ──────────────────────────────────────────
 function loadProblem() {
   const p = groupProbs[cur];
-  done = false; selCard = null; placed = { each: null, count: null, total: null };
-  shuffled = shuffle(p.cards);
+  done = false; step = 0; selCard = null;
 
   const total = groupProbs.length;
   document.getElementById('progLabel').textContent = (cur + 1) + ' / ' + total;
@@ -386,23 +415,41 @@ function loadProblem() {
   document.getElementById('doneBanner').className = 'done-banner';
 
   // Reset zones
-  ['each', 'count', 'total'].forEach(r => {
+  STEP_ORDER.forEach(r => {
     const s = document.getElementById('zs-' + r);
-    s.textContent = '';
+    s.innerHTML = '';
     s.className = 'zone-slot';
   });
 
-  // Render pool
+  // 方案 B：4 張牌（3 題目牌 + 1 干擾牌）
+  const decoy = makeDecoy(p);
+  shuffled = shuffle([...p.cards, decoy]);
+
   const pool = document.getElementById('cardPool');
   pool.innerHTML = shuffled.map((c, i) =>
     '<div class="qty-card" data-i="' + i + '" onclick="cardClick(this)">' + cardHTML(c) + '</div>'
   ).join('');
 
-  // Reset reveal & button
   document.getElementById('eqReveal').className = 'eq-reveal';
   document.getElementById('nextBtn').className = 'next-btn';
+
+  updateStepUI();
 }
 
+// ── Step UI ───────────────────────────────────────────────
+function updateStepUI() {
+  const prompt = document.getElementById('stepPrompt');
+  prompt.textContent = STEP_LABELS[step];
+  prompt.className = 'step-prompt s' + step;
+
+  STEP_ORDER.forEach((r, i) => {
+    const slot = document.getElementById('zs-' + r);
+    if (slot.classList.contains('locked-' + r)) return; // already locked
+    slot.className = 'zone-slot ' + (i === step ? 'active-zone' : 'inactive-zone');
+  });
+}
+
+// ── Card click ────────────────────────────────────────────
 function cardClick(el) {
   if (el.classList.contains('gone') || done) return;
   if (selCard && selCard.el === el) {
@@ -415,81 +462,61 @@ function cardClick(el) {
   selCard = { el, card: shuffled[parseInt(el.dataset.i)] };
 }
 
+// ── Zone click (sequential) ───────────────────────────────
 function zoneClick(role) {
-  if (done) return;
+  if (done || !selCard) return;
+  if (role !== STEP_ORDER[step]) return; // only active zone responds
+
   const slot = document.getElementById('zs-' + role);
-  if (selCard) {
-    if (placed[role]) returnCard(placed[role], role);
-    placed[role] = selCard.card;
-    selCard.el.classList.remove('selected');
+  const card = selCard.card;
+  selCard.el.classList.remove('selected');
+
+  if (card.role === role) {
+    // ✓ Correct
     selCard.el.classList.add('gone');
-    slot.innerHTML = cardHTML(selCard.card);
-    slot.className = 'zone-slot filled';
     selCard = null;
-    if (placed.each && placed.count && placed.total) checkMatch();
-  } else if (placed[role]) {
-    returnCard(placed[role], role);
-    placed[role] = null;
-  }
-}
-
-function returnCard(card, fromRole) {
-  const slot = document.getElementById('zs-' + fromRole);
-  slot.textContent = '';
-  slot.className = 'zone-slot';
-  placed[fromRole] = null;
-  // Un-hide matching pool card
-  document.querySelectorAll('.qty-card').forEach(el => {
-    if (shuffled[parseInt(el.dataset.i)].label === card.label) {
-      el.classList.remove('gone', 'selected');
+    slot.innerHTML = cardHTML(card);
+    slot.className = 'zone-slot locked-' + role;
+    step++;
+    if (step >= STEP_ORDER.length) {
+      done = true;
+      setTimeout(showEquation, 400);
+    } else {
+      updateStepUI();
     }
-  });
-}
-
-function checkMatch() {
-  const allOk = placed.each.role === 'each' &&
-                placed.count.role === 'count' &&
-                placed.total.role === 'total';
-
-  if (allOk) {
-    done = true;
-    ['each', 'count', 'total'].forEach(r => {
-      document.getElementById('zs-' + r).className = 'zone-slot correct-' + r;
-    });
-    const p = groupProbs[cur];
-    const ans = Math.round(p.tv / p.rv);
-    const eqText = p.rt === 'each'
-      ? p.rv + ' × □ = ' + p.tv + ' ✓'
-      : '□ × ' + p.rv + ' = ' + p.tv + ' ✓';
-
-    setTimeout(() => {
-      document.getElementById('eqFormal').textContent = eqText;
-      document.getElementById('eqHint').textContent = '除法驗算：' + p.tv + ' ÷ ' + p.rv + ' = ' + ans;
-      document.getElementById('eqReveal').className = 'eq-reveal show';
-      const btn = document.getElementById('nextBtn');
-      btn.textContent = cur < groupProbs.length - 1 ? '下一題 →' : '完成！🎉';
-      btn.className = 'next-btn show';
-    }, 500);
-
   } else {
-    // Shake wrong zones, return wrong cards
-    let wrongRoles = [];
-    ['each', 'count', 'total'].forEach(r => {
-      if (placed[r] && placed[r].role !== r) {
-        document.getElementById('zs-' + r).classList.add('err');
-        wrongRoles.push(r);
-      }
-    });
-    showToast('有些配錯了，再想想！');
+    // ✗ Wrong card
+    selCard = null;
+    slot.innerHTML = cardHTML(card);
+    slot.className = 'zone-slot err';
+    showToast(card.role === 'decoy' ? '這是算出來的答案，不是題目給的數量！' : '放錯了，再看看題目！');
     setTimeout(() => {
-      wrongRoles.forEach(r => {
-        document.getElementById('zs-' + r).classList.remove('err');
-        if (placed[r]) { returnCard(placed[r], r); }
+      slot.innerHTML = '';
+      slot.className = 'zone-slot active-zone';
+      document.querySelectorAll('.qty-card').forEach(el => {
+        if (shuffled[parseInt(el.dataset.i)].label === card.label)
+          el.classList.remove('gone', 'selected');
       });
-    }, 500);
+    }, 450);
   }
 }
 
+// ── Show equation after all 3 steps correct ───────────────
+function showEquation() {
+  const p = groupProbs[cur];
+  const ans = Math.round(p.tv / p.rv);
+  const eqText = p.rt === 'each'
+    ? p.rv + ' × □ = ' + p.tv + ' ✓'
+    : '□ × ' + p.rv + ' = ' + p.tv + ' ✓';
+  document.getElementById('eqFormal').textContent = eqText;
+  document.getElementById('eqHint').textContent = '除法驗算：' + p.tv + ' ÷ ' + p.rv + ' = ' + ans;
+  document.getElementById('eqReveal').className = 'eq-reveal show';
+  const btn = document.getElementById('nextBtn');
+  btn.textContent = cur < groupProbs.length - 1 ? '下一題 →' : '完成！🎉';
+  btn.className = 'next-btn show';
+}
+
+// ── Next problem ──────────────────────────────────────────
 function nextProblem() {
   cur++;
   if (cur >= groupProbs.length) {
