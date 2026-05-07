@@ -577,8 +577,22 @@ function zoneClick(role) {
 // ── Show equation after all 3 steps correct ───────────────
 function showEquation() {
   const p = groupProbs[cur];
-  document.getElementById('eqFormal').textContent = p.dv + ' ÷ ' + p.dr + ' = ' + p.qt + ' ✓';
-  document.getElementById('eqHint').textContent = '乘法驗算：' + p.qt + ' × ' + p.dr + ' = ' + p.dv;
+  let eq, hint;
+  if (p.rt === 'quotient') {
+    // 找商：總 ÷ 除數 = 商
+    eq   = p.dv + ' ÷ ' + p.dr + ' = ' + p.qt + ' ✓';
+    hint = '乘法驗算：' + p.qt + ' × ' + p.dr + ' = ' + p.dv;
+  } else if (p.rt === 'divisor') {
+    // 找除數：總 ÷ 商 = 除數
+    eq   = p.dv + ' ÷ ' + p.qt + ' = ' + p.dr + ' ✓';
+    hint = '乘法驗算：' + p.dr + ' × ' + p.qt + ' = ' + p.dv;
+  } else {
+    // 找被除數（總數）：每次 × 重複 = 總共
+    eq   = p.dr + ' × ' + p.qt + ' = ' + p.dv + ' ✓';
+    hint = '除法驗算：' + p.dv + ' ÷ ' + p.dr + ' = ' + p.qt;
+  }
+  document.getElementById('eqFormal').textContent = eq;
+  document.getElementById('eqHint').textContent = hint;
   document.getElementById('eqReveal').className = 'eq-reveal show';
   const btn = document.getElementById('nextBtn');
   btn.textContent = cur < groupProbs.length - 1 ? '下一題 →' : '完成！🎉';
