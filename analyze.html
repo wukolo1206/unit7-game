@@ -137,6 +137,9 @@
     .done-btn   { border: none; border-radius: 14px; background: #7c3aed; color: #fff;
                   font-size: 17px; font-weight: bold; padding: 13px 32px; cursor: pointer; }
 
+    mark.hl { background: #fff3b0; color: inherit; border-radius: 3px;
+              padding: 0 2px; font-style: normal; }
+
     .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
              background: rgba(0,0,0,.72); color: #fff; padding: 10px 22px;
              border-radius: 20px; font-size: 15px; font-weight: bold;
@@ -377,6 +380,7 @@ let step     = 0;   // 0=找each, 1=找count, 2=找total
 let shuffled = [];
 let selCard  = null;
 let done     = false;
+let currentP = null; // reference to current problem for highlight
 
 // ── Helpers ───────────────────────────────────────────────
 function shuffle(arr) {
@@ -394,6 +398,63 @@ function cardHTML(c) {
   return h;
 }
 
+// ── Text highlight ────────────────────────────────────────
+// Returns HTML string with <mark> around the relevant clause(s)
+function buildHighlightedText(p, card) {
+  const text = p.text;
+  if (card.role === 'decoy') return text;
+
+  // Collect [start, end] ranges to highlight
+  const ranges = [];
+  const addRange = (re) => {
+    const m = re.exec(text);
+    if (m) ranges.push([m.index, m.index + m[0].length]);
+  };
+
+  if (card.label.includes('？')) {
+    // Highlight the final question sentence
+    addRange(/[^，。！？]*？$/);
+  } else {
+    // Numbers to find: from note (multi-step) or from label
+    const nums = card.note
+      ? (card.note.match(/\d+/g) || [])
+      : [(card.label.match(/\d+/) || [])[0]].filter(Boolean);
+    nums.forEach(num => {
+      // Match the clause (between Chinese punctuation) containing this exact number
+      addRange(new RegExp('[^，。！？]*(?<!\\d)' + num + '(?!\\d)[^，。！？]*'));
+    });
+  }
+
+  if (ranges.length === 0) return text;
+
+  // Sort and merge overlapping ranges
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged = [ranges[0].slice()];
+  for (let i = 1; i < ranges.length; i++) {
+    const last = merged[merged.length - 1];
+    if (ranges[i][0] <= last[1]) last[1] = Math.max(last[1], ranges[i][1]);
+    else merged.push(ranges[i].slice());
+  }
+
+  // Build result HTML
+  let html = '', pos = 0;
+  merged.forEach(([s, e]) => {
+    html += text.slice(pos, s) + '<mark class="hl">' + text.slice(s, e) + '</mark>';
+    pos = e;
+  });
+  return html + text.slice(pos);
+}
+
+function highlightFor(card) {
+  if (!currentP) return;
+  document.getElementById('problemText').innerHTML = buildHighlightedText(currentP, card);
+}
+
+function clearHighlight() {
+  if (!currentP) return;
+  document.getElementById('problemText').textContent = currentP.text;
+}
+
 // 方案 B：自動生成干擾牌（答案數值 + 未知數的單位）
 function makeDecoy(p) {
   const ans = Math.round(p.tv / p.rv);
@@ -405,12 +466,13 @@ function makeDecoy(p) {
 // ── Load problem ──────────────────────────────────────────
 function loadProblem() {
   const p = groupProbs[cur];
+  currentP = p;
   done = false; step = 0; selCard = null;
 
   const total = groupProbs.length;
   document.getElementById('progLabel').textContent = (cur + 1) + ' / ' + total;
   document.getElementById('progFill').style.width = (cur / total * 100) + '%';
-  document.getElementById('problemText').textContent = p.text;
+  document.getElementById('problemText').textContent = p.text; // plain text on load
   document.getElementById('mainCard').style.display = '';
   document.getElementById('doneBanner').className = 'done-banner';
 
@@ -455,11 +517,13 @@ function cardClick(el) {
   if (selCard && selCard.el === el) {
     el.classList.remove('selected');
     selCard = null;
+    clearHighlight();
     return;
   }
   document.querySelectorAll('.qty-card').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   selCard = { el, card: shuffled[parseInt(el.dataset.i)] };
+  highlightFor(selCard.card);
 }
 
 // ── Zone click (sequential) ───────────────────────────────
@@ -475,6 +539,7 @@ function zoneClick(role) {
     // ✓ Correct
     selCard.el.classList.add('gone');
     selCard = null;
+    clearHighlight();
     slot.innerHTML = cardHTML(card);
     slot.className = 'zone-slot locked-' + role;
     step++;
@@ -487,6 +552,7 @@ function zoneClick(role) {
   } else {
     // ✗ Wrong card
     selCard = null;
+    clearHighlight();
     slot.innerHTML = cardHTML(card);
     slot.className = 'zone-slot err';
     showToast(card.role === 'decoy' ? '這是算出來的答案，不是題目給的數量！' : '放錯了，再看看題目！');
