@@ -550,20 +550,17 @@ function zoneClick(role) {
       updateStepUI();
     }
   } else {
-    // ✗ Wrong card
+    // ✗ Wrong card → go back to previous problem
     selCard = null;
     clearHighlight();
     slot.innerHTML = cardHTML(card);
     slot.className = 'zone-slot err';
-    showToast(card.role === 'decoy' ? '這是算出來的答案，不是題目給的數量！' : '放錯了，再看看題目！');
+    const isFirst = cur === 0;
+    showToast(isFirst ? '答錯了，重新來過！' : '答錯了，退回上一題！');
     setTimeout(() => {
-      slot.innerHTML = '';
-      slot.className = 'zone-slot active-zone';
-      document.querySelectorAll('.qty-card').forEach(el => {
-        if (shuffled[parseInt(el.dataset.i)].label === card.label)
-          el.classList.remove('gone', 'selected');
-      });
-    }, 450);
+      if (!isFirst) cur--;
+      loadProblem();
+    }, 900);
   }
 }
 
