@@ -129,13 +129,20 @@
     .next-btn:active { opacity: .85; }
 
     /* Done */
-    .done-banner { background: #fff; border-radius: 20px; padding: 28px 20px;
-                   box-shadow: 0 2px 16px rgba(124,58,237,.12); text-align: center; display: none; }
+    .done-banner { background: #fff; border-radius: 24px; padding: 36px 24px;
+                   box-shadow: 0 4px 24px rgba(124,58,237,.18); text-align: center; display: none; }
     .done-banner.show { display: block; animation: fadeUp .5s ease; }
-    .done-title { font-size: 26px; font-weight: bold; color: #2f9e44; margin-bottom: 10px; }
-    .done-sub   { font-size: 15px; color: #666; line-height: 1.7; margin-bottom: 20px; }
-    .done-btn   { border: none; border-radius: 14px; background: #7c3aed; color: #fff;
-                  font-size: 17px; font-weight: bold; padding: 13px 32px; cursor: pointer; }
+    .done-star  { font-size: 52px; margin-bottom: 10px; animation: popIn .5s cubic-bezier(.17,.67,.44,1.4); }
+    .done-title { font-size: 26px; font-weight: bold; color: #2f9e44; margin-bottom: 6px; }
+    .done-group { display: inline-block; background: #f3f0ff; color: #7c3aed;
+                  font-size: 14px; font-weight: bold; border-radius: 20px;
+                  padding: 4px 14px; margin-bottom: 16px; }
+    .done-sub   { font-size: 15px; color: #666; line-height: 1.8; margin-bottom: 24px; }
+    .done-btns  { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .done-btn   { border: none; border-radius: 14px; font-size: 16px; font-weight: bold;
+                  padding: 13px 24px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .done-btn.retry { background: #7c3aed; color: #fff; }
+    .done-btn.next  { background: #f3f0ff; color: #7c3aed; }
 
     mark.hl { background: #fff3b0; color: inherit; border-radius: 3px;
               padding: 0 2px; font-style: normal; }
@@ -224,12 +231,17 @@
   </div>
 
   <div class="done-banner" id="doneBanner">
-    <div class="done-title">全部完成！🎉</div>
+    <div class="done-star">🏆</div>
+    <div class="done-title">五題全過關！</div>
+    <div class="done-group" id="doneGroup"></div>
     <div class="done-sub">
-      每道題都有「每次的數量 × 重複的次數 = 總共的數量」，<br>
-      掌握三個角色，應用題就能輕鬆列式！
+      每次的數量 × 重複的次數 = 總共的數量<br>
+      掌握這三個角色，應用題就難不倒你！
     </div>
-    <button class="done-btn" onclick="location.reload()">再練一次</button>
+    <div class="done-btns">
+      <button class="done-btn retry" onclick="initGroup()">再挑戰一次</button>
+      <button class="done-btn next"  onclick="goNextGroup()">換下一組 →</button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -583,6 +595,9 @@ function showEquation() {
 function nextProblem() {
   cur++;
   if (cur >= groupProbs.length) {
+    const start = curGroup * GROUP_SIZE + 1;
+    const end   = Math.min(start + GROUP_SIZE - 1, PROBLEMS.length);
+    document.getElementById('doneGroup').textContent = '第 ' + start + '–' + end + ' 題';
     document.getElementById('mainCard').style.display = 'none';
     document.getElementById('doneBanner').className = 'done-banner show';
     document.getElementById('progFill').style.width = '100%';
@@ -590,6 +605,11 @@ function nextProblem() {
   } else {
     loadProblem();
   }
+}
+
+function goNextGroup() {
+  curGroup = (curGroup + 1) % NUM_GROUPS;
+  initGroup();
 }
 
 let toastT = null;
