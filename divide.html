@@ -583,9 +583,9 @@ function showEquation() {
     eq   = p.dv + ' ÷ ' + p.dr + ' = ' + p.qt + ' ✓';
     hint = '乘法驗算：' + p.qt + ' × ' + p.dr + ' = ' + p.dv;
   } else if (p.rt === 'divisor') {
-    // 找除數：總 ÷ 商 = 除數
-    eq   = p.dv + ' ÷ ' + p.qt + ' = ' + p.dr + ' ✓';
-    hint = '乘法驗算：' + p.dr + ' × ' + p.qt + ' = ' + p.dv;
+    // 找除數：保留□，用乘法關係引導
+    eq   = p.dv + ' ÷ □ = ' + p.qt;
+    hint = '想：□ × ' + p.qt + ' = ' + p.dv + '，所以□ = ' + p.dv + ' ÷ ' + p.qt + ' = ' + p.dr + ' ✓';
   } else {
     // 找被除數（總數）：主顯示保留□，乘法算式求出答案
     eq   = '□ ÷ ' + p.dr + ' = ' + p.qt;
