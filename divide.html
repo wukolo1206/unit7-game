@@ -587,9 +587,9 @@ function showEquation() {
     eq   = p.dv + ' ÷ ' + p.qt + ' = ' + p.dr + ' ✓';
     hint = '乘法驗算：' + p.dr + ' × ' + p.qt + ' = ' + p.dv;
   } else {
-    // 找被除數（總數）：先顯示除法算式，再提示乘法求解
-    eq   = p.dv + ' ÷ ' + p.dr + ' = ' + p.qt + ' ✓';
-    hint = '乘法算式：' + p.dr + ' × ' + p.qt + ' = ' + p.dv;
+    // 找被除數（總數）：主顯示保留□，乘法算式求出答案
+    eq   = '□ ÷ ' + p.dr + ' = ' + p.qt;
+    hint = p.dr + ' × ' + p.qt + ' = ' + p.dv + '，所以□ = ' + p.dv + ' ✓';
   }
   document.getElementById('eqFormal').textContent = eq;
   document.getElementById('eqHint').textContent = hint;
