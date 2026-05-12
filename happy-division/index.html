@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>快樂分分看</title>
+  <style>
+    :root {
+      --ink: #273043;
+      --muted: #667085;
+      --paper: #ffffff;
+      --line: #d9e2ec;
+      --blue: #2f80ed;
+      --green: #1fa971;
+      --yellow: #f7c948;
+      --orange: #f2994a;
+      --pink: #ee5aa7;
+      --purple: #7c5cff;
+      --red: #e5484d;
+      --shadow: 0 18px 45px rgba(39, 48, 67, 0.12);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(247, 201, 72, 0.32), transparent 28%),
+        radial-gradient(circle at 86% 18%, rgba(47, 128, 237, 0.20), transparent 30%),
+        linear-gradient(135deg, #f7fbff 0%, #fff7ed 100%);
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: var(--blue);
+      color: #fff;
+      box-shadow: var(--shadow);
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 46px);
+      letter-spacing: 0;
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 16px;
+    }
+
+    .btn {
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      color: var(--ink);
+      background: #eef4ff;
+      border: 2px solid rgba(47, 128, 237, 0.18);
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.02); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .btn.green { background: var(--green); color: #fff; border-color: var(--green); }
+    .btn.yellow { background: var(--yellow); color: #654b00; border-color: var(--yellow); }
+    .btn.orange { background: var(--orange); color: #fff; border-color: var(--orange); }
+    .btn.pink { background: var(--pink); color: #fff; border-color: var(--pink); }
+    .btn.purple { background: var(--purple); color: #fff; border-color: var(--purple); }
+    .btn.red { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn.ghost { background: #fff; color: var(--muted); border-color: var(--line); }
+
+    .menu {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(217, 226, 236, 0.8);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .hero {
+      min-height: 380px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(160deg, #fff 0%, #f0f7ff 100%);
+    }
+
+    .hero-canvas {
+      width: 100%;
+      height: 250px;
+      display: block;
+      margin-top: 10px;
+      border-radius: 8px;
+      background: #f7fbff;
+      border: 2px dashed #c7d8ef;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mode-card {
+      min-height: 116px;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: left;
+      background: #fff;
+      border: 2px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mode-card strong {
+      font-size: 19px;
+      line-height: 1.2;
+    }
+
+    .mode-card span {
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .mode-card.sharing { border-color: rgba(247, 201, 72, 0.85); }
+    .mode-card.grouping { border-color: rgba(242, 153, 74, 0.85); }
+    .mode-card.concept { border-color: rgba(238, 90, 167, 0.65); }
+    .mode-card.magic { border-color: rgba(124, 92, 255, 0.65); }
+    .mode-card.remainder { border-color: rgba(124, 92, 255, 0.35); }
+    .mode-card.practice { border-color: rgba(31, 169, 113, 0.55); }
+
+    .workbench {
+      display: grid;
+      gap: 14px;
+    }
+
+    .story {
+      background: var(--paper);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .story-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .story-text {
+      font-size: clamp(20px, 3vw, 28px);
+      line-height: 1.45;
+      font-weight: 900;
+    }
+
+    .story-text b {
+      color: var(--red);
+      font-size: 1.16em;
+    }
+
+    .stage-pill {
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #edf2ff;
+      color: #3446a6;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .canvas-wrap {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 10px;
+    }
+
+    #mainCanvas {
+      width: 100%;
+      height: min(62vh, 610px);
+      min-height: 430px;
+      display: block;
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .summary {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .note {
+      color: var(--muted);
+      line-height: 1.55;
+      font-weight: 700;
+    }
+
+    .equation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .number-choice {
+      min-width: 94px;
+      min-height: 86px;
+      border-radius: 8px;
+      background: #fff;
+      border: 3px solid var(--line);
+      font-size: 48px;
+      font-weight: 1000;
+      color: var(--ink);
+    }
+
+    .number-choice.active {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 6px rgba(238, 90, 167, 0.14);
+    }
+
+    .number-choice.done-red { background: #fff1f1; color: var(--red); border-color: #ffc5c8; }
+    .number-choice.done-blue { background: #eef5ff; color: var(--blue); border-color: #b8d5ff; }
+    .number-choice.done-green { background: #ecfff7; color: var(--green); border-color: #b9ead4; }
+
+    .operator {
+      font-size: 44px;
+      color: #98a2b3;
+      font-weight: 900;
+    }
+
+    .feedback {
+      border-radius: 8px;
+      padding: 14px;
+      border: 2px solid var(--line);
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .feedback.good { background: #ecfff7; border-color: #b9ead4; color: #0e7550; }
+    .feedback.bad { background: #fff1f1; border-color: #ffc5c8; color: #a83236; }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      width: min(360px, 100%);
+      margin: 16px auto 0;
+    }
+
+    .keypad .btn {
+      min-height: 62px;
+      font-size: 24px;
+      border-radius: 8px;
+    }
+
+    .score-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff7da;
+      border: 1px solid #f7dda0;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    @media (max-width: 820px) {
+      .app { padding: 12px; }
+      .topbar { align-items: flex-start; }
+      .menu { grid-template-columns: 1fr; }
+      .mode-grid { grid-template-columns: 1fr; }
+      .brand-mark { width: 42px; height: 42px; font-size: 24px; }
+      #mainCanvas { min-height: 500px; }
+      .number-choice { min-width: 76px; min-height: 72px; font-size: 38px; }
+      .operator { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confettiCanvas" class="confetti" hidden></canvas>
+  <main id="app" class="app"></main>
+  <script src="division-core.js"></script>
+  <script>
+    (function () {
+      var Core = window.DivisionCore;
+      var app = document.getElementById('app');
+      var confettiCanvas = document.getElementById('confettiCanvas');
+      var items = ['🍪', '🍎', '🍬', '⭐', '🧁', '🍕', '🍩', '🎾'];
+      var sourceHitBox = null;
+      var animationTimer = null;
+      var confettiFrame = null;
+
+      var state = {
+        screen: 'menu',
+        visualProblem: null,
+        distributed: 0,
+        selectedBatch: false,
+        isAuto: false,
+        isSpecial: false,
+        specialKind: 'self',
+        remainderProblem: null,
+        conceptProblem: null,
+        conceptStep: 0,
+        conceptFeedback: null,
+        practiceProblem: null,
+        answer: '',
+        feedback: '',
+        score: 0,
+        streak: 0
+      };
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function randomItem() {
+        return items[randomInt(0, items.length - 1)];
+      }
+
+      function button(label, className, action) {
+        var type = action ? ' data-action="' + action + '"' : '';
+        return '<button class="btn ' + className + '"' + type + '>' + label + '</button>';
+      }
+
+      function topbar(title, subtitle, modeLabel) {
+        var back = state.screen === 'menu' ? '' : button('← 主選單', 'ghost', 'menu');
+        return '<div class="topbar">' +
+          '<div class="brand"><div class="brand-mark">÷</div><div><h1>' + title + '</h1><p class="subtitle">' + subtitle + '</p></div></div>' +
+          '<div class="stage-pill">' + modeLabel + '</div>' + back +
+          '</div>';
+      }
+
+      function render() {
+        clearTimeout(animationTimer);
+        if (state.screen === 'menu') renderMenu();
+        if (state.screen === 'visual') renderVisual();
+        if (state.screen === 'remainder') renderRemainder();
+        if (state.screen === 'concept') renderConcept();
+        if (state.screen === 'practice') renderPractice();
+      }
+
+      function renderMenu() {
+        app.innerHTML = topbar('快樂分分看', '三年級除法觀念引導', '學習選單') +
+          '<section class="menu">' +
+          '<div class="panel hero">' +
+          '<div><h2 class="section-title">用看得見的方式學除法</h2>' +
+          '<p class="note">從「一輪一輪平分」和「每幾個圈一袋」開始，再進到餘數、算式名詞與快速練習。所有活動都能直接在瀏覽器執行。</p></div>' +
+          '<canvas id="heroCanvas" class="hero-canvas" width="900" height="300"></canvas>' +
+          '</div>' +
+          '<div class="panel">' +
+          '<h2 class="section-title">選擇活動</h2>' +
+          '<div class="mode-grid">' +
+          menuCard('sharing', '👥 大家平分', '平分除：一輪一輪分給每位朋友。') +
+          menuCard('grouping', '🛍️ 分堆裝袋', '包含除：每幾個圈起來裝成一袋。') +
+          menuCard('concept', '📖 算式解密', '點出被除數、除數、商各代表什麼。') +
+          menuCard('magic-self', '✨ 除數=被除數', '看見同數相除，商為 1。') +
+          menuCard('magic-one', '✨ 除數是 1', '看見除以 1，商等於自己。') +
+          menuCard('remainder', '⚠️ 餘數檢查員', '確認餘數一定要比除數小。') +
+          '</div>' +
+          '<div style="margin-top:12px">' + button('🏆 挑戰模式', 'green', 'practice') + '</div>' +
+          '</div>' +
+          '</section>';
+        drawHero();
+      }
+
+      function menuCard(action, title, text) {
+        var kind = action.indexOf('magic') === 0 ? 'magic' : action;
+        return '<button class="mode-card ' + kind + '" data-action="' + action + '">' +
+          '<strong>' + title + '</strong><span>' + text + '</span>' +
+          '</button>';
+      }
+
+      function drawHero() {
+        var canvas = document.getElementById('heroCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#f7fbff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawRounded(ctx, 46, 52, 240, 170, 24, '#fff7da', '#f7c948', 4);
+        drawRounded(ctx, 330, 52, 160, 170, 22, '#eef5ff', '#9bc4ff', 4);
+        drawRounded(ctx, 520, 52, 160, 170, 22, '#eef5ff', '#9bc4ff', 4);
+        drawRounded(ctx, 710, 52, 160, 170, 22, '#eef5ff', '#9bc4ff', 4);
+        ctx.fillStyle = '#273043';
+        ctx.font = '700 28px sans-serif';
+        ctx.fillText('12 個點心', 86, 92);
+        ctx.fillText('朋友 1', 365, 92);
+        ctx.fillText('朋友 2', 555, 92);
+        ctx.fillText('朋友 3', 745, 92);
+        ctx.font = '34px sans-serif';
+        for (var i = 0; i < 12; i += 1) {
+          ctx.fillText(items[i % items.length], 78 + (i % 4) * 44, 135 + Math.floor(i / 4) * 44);
+        }
+        ctx.font = '30px sans-serif';
+        for (var g = 0; g < 3; g += 1) {
+          for (var j = 0; j < 4; j += 1) {
+            ctx.fillText('🍪', 360 + g * 190 + (j % 2) * 42, 136 + Math.floor(j / 2) * 44);
+          }
+        }
+        ctx.strokeStyle = '#98a2b3';
+        ctx.lineWidth = 5;
+        drawArrow(ctx, 292, 142, 324, 142);
+        drawArrow(ctx, 492, 142, 516, 142);
+        drawArrow(ctx, 682, 142, 706, 142);
+      }
+
+      function startVisual(type) {
+        var a = randomInt(2, 5);
+        var b = randomInt(2, 4);
+        state.visualProblem = Core.createVisualProblem({
+          type: type,
+          total: a * b,
+          groups: a,
+          perGroup: b,
+          itemEmoji: randomItem()
+        });
+        state.screen = 'visual';
+        state.distributed = 0;
+        state.selectedBatch = false;
+        state.isAuto = false;
+        state.isSpecial = false;
+        render();
+      }
+
+      function startSpecial(kind) {
+        var visualType = Math.random() > 0.5 ? 'sharing' : 'grouping';
+        state.visualProblem = Core.createSpecialProblem(kind, randomInt(2, 6), visualType, randomItem());
+        state.screen = 'visual';
+        state.distributed = 0;
+        state.selectedBatch = false;
+        state.isAuto = false;
+        state.isSpecial = true;
+        state.specialKind = kind;
+        render();
+      }
+
+      function renderVisual() {
+        var problem = state.visualProblem;
+        var expression = Core.getExpression(problem);
+        var summary = Core.summarizeVisual(problem, state.distributed);
+        var modeName = state.isSpecial ? '數字魔法師' : (problem.type === 'sharing' ? '大家平分' : '分堆裝袋');
+        var story = problem.type === 'sharing'
+          ? '全部有 <b>' + problem.total + '</b> 個 ' + problem.itemEmoji + '，平分給 <b>' + problem.groups + '</b> 位朋友。'
+          : '全部有 <b>' + problem.total + '</b> 個 ' + problem.itemEmoji + '，每 <b>' + problem.perGroup + '</b> 個圈起來裝一袋。';
+
+        app.innerHTML = topbar('快樂分分看', '用圈選、移動、觀察完成除法故事', modeName) +
+          '<section class="workbench">' +
+          '<div class="story"><div class="story-row"><p class="story-text">' + story + '</p>' +
+          '<div class="stage-pill">' + expression.dividend + ' ÷ ' + expression.divisor + ' = ' + expression.quotient + '</div></div>' +
+          '<p class="note">' + visualInstruction(summary) + '</p></div>' +
+          '<div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>' +
+          '<div class="actions">' +
+          button(state.selectedBatch ? '➡️ 送到下面' : '⭕ 圈選下一批', 'primary', 'visual-step') +
+          button('▶ 自動演示', 'ghost', 'visual-auto') +
+          button('↻ 換一題', 'green', 'visual-next') +
+          '</div>' +
+          (summary.isComplete ? visualCompleteMessage(problem, expression) : '') +
+          '</section>';
+        drawVisualCanvas();
+        if (state.isAuto && !summary.isComplete) {
+          animationTimer = setTimeout(function () {
+            visualStep();
+          }, state.selectedBatch ? 780 : 430);
+        }
+      }
+
+      function visualInstruction(summary) {
+        if (summary.isComplete) return '分完了，請看下面的觀念總結。';
+        if (state.selectedBatch) return '紅色圈圈代表下一批。再按一次或點畫面，就會送到朋友或袋子裡。';
+        return '先圈出下一批，再把它送到下面。這樣可以看見除法是一批一批重複的動作。';
+      }
+
+      function visualCompleteMessage(problem, expression) {
+        var extra = '';
+        if (state.isSpecial && state.specialKind === 'self') {
+          extra = '<p class="note">魔法小筆記：同一個數自己除自己，答案是 1。</p>';
+        }
+        if (state.isSpecial && state.specialKind === 'one') {
+          extra = '<p class="note">魔法小筆記：除以 1 時，答案和原本的數一樣。</p>';
+        }
+        return '<div class="panel"><div class="summary">' + expression.dividend + ' ÷ ' + expression.divisor + ' = ' + expression.quotient + '</div>' + extra + '</div>';
+      }
+
+      function visualStep() {
+        var summary = Core.summarizeVisual(state.visualProblem, state.distributed);
+        if (summary.isComplete) return;
+        if (!state.selectedBatch) {
+          state.selectedBatch = true;
+        } else {
+          var moved = Core.moveVisualBatch(state.visualProblem, state.distributed);
+          state.distributed = moved.distributed;
+          state.selectedBatch = false;
+          if (moved.isComplete) burstConfetti();
+        }
+        render();
+      }
+
+      function startRemainder() {
+        var divisor = randomInt(3, 5);
+        var quotient = randomInt(3, 5);
+        var remainder = randomInt(1, divisor - 1);
+        state.remainderProblem = {
+          total: divisor * quotient + remainder,
+          divisor: divisor,
+          currentQuotient: 0,
+          itemEmoji: randomItem()
+        };
+        state.screen = 'remainder';
+        state.selectedBatch = false;
+        render();
+      }
+
+      function renderRemainder() {
+        var p = state.remainderProblem;
+        var status = Core.getRemainderStatus(p);
+        app.innerHTML = topbar('餘數檢查員', '餘數要比除數小，才算真的分完', '進階觀念') +
+          '<section class="workbench">' +
+          '<div class="story"><div class="story-row"><p class="story-text">共有 <b>' + p.total + '</b> 個 ' + p.itemEmoji + '，每 <b>' + p.divisor + '</b> 個裝一袋。</p>' +
+          '<div class="stage-pill">已裝 ' + p.currentQuotient + ' 袋，剩 ' + status.remainder + ' 個</div></div>' +
+          '<p class="note">' + (status.canMakeBatch ? '剩下的還夠再裝一袋，餘數太大，請繼續分。' : '剩下的不夠再裝一袋，餘數比除數小，完成。') + '</p></div>' +
+          '<div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>' +
+          '<div class="actions">' +
+          button(state.selectedBatch ? '➡️ 裝成一袋' : '⭕ 圈出一袋', 'purple', 'remainder-step') +
+          button('↻ 換一題', 'green', 'remainder-next') +
+          '</div>' +
+          (status.isComplete ? '<div class="panel"><div class="summary">餘數 ' + status.remainder + ' ＜ 除數 ' + p.divisor + '，檢查通過！</div></div>' : '') +
+          '</section>';
+        drawRemainderCanvas();
+      }
+
+      function remainderStep() {
+        var status = Core.getRemainderStatus(state.remainderProblem);
+        if (!status.canMakeBatch) return;
+        if (!state.selectedBatch) {
+          state.selectedBatch = true;
+        } else {
+          state.remainderProblem.currentQuotient += 1;
+          state.selectedBatch = false;
+          if (Core.getRemainderStatus(state.remainderProblem).isComplete) burstConfetti();
+        }
+        render();
+      }
+
+      function startConcept() {
+        var divisor = randomInt(3, 5);
+        var quotient = randomInt(2, 4);
+        state.conceptProblem = {
+          total: divisor * quotient,
+          divisor: divisor,
+          quotient: quotient,
+          itemEmoji: randomItem()
+        };
+        state.screen = 'concept';
+        state.conceptStep = 0;
+        state.conceptFeedback = null;
+        render();
+      }
+
+      function renderConcept() {
+        var p = state.conceptProblem;
+        var asks = ['全部有多少個？', '平分給幾位朋友？', '最後每人得到幾個？'];
+        var done = state.conceptStep > 2;
+        app.innerHTML = topbar('算式解密', '看故事，點出算式中每個數的意思', '觀念小達人') +
+          '<section class="workbench">' +
+          '<div class="story"><p class="story-text">我們有 <b>' + p.total + '</b> 個 ' + p.itemEmoji + '，平分給 <b>' + p.divisor + '</b> 位朋友，每人得到 <b>' + p.quotient + '</b> 個。</p>' +
+          '<p class="note">' + (done ? '三個角色都認識了。' : '請點選算式中代表「' + asks[state.conceptStep] + '」的數字。') + '</p></div>' +
+          '<div class="panel">' +
+          '<div class="equation">' +
+          conceptButton('total', p.total, 0, 'done-red') + '<span class="operator">÷</span>' +
+          conceptButton('divisor', p.divisor, 1, 'done-blue') + '<span class="operator">=</span>' +
+          conceptButton('quotient', p.quotient, 2, 'done-green') +
+          '</div>' +
+          conceptFeedbackHtml() +
+          '<div class="actions">' +
+          (done ? button('↻ 再來一題', 'pink', 'concept-next') : '') +
+          '</div></div></section>';
+      }
+
+      function conceptButton(key, value, step, doneClass) {
+        var cls = 'number-choice';
+        if (state.conceptStep === step) cls += ' active';
+        if (state.conceptStep > step) cls += ' ' + doneClass;
+        var disabled = state.conceptStep !== step ? ' disabled' : '';
+        return '<button class="' + cls + '" data-action="concept-' + key + '"' + disabled + '>' + value + '</button>';
+      }
+
+      function conceptFeedbackHtml() {
+        if (!state.conceptFeedback) return '';
+        var f = state.conceptFeedback;
+        return '<div class="feedback ' + (f.good ? 'good' : 'bad') + '">' + f.text + '</div>' +
+          (f.good && state.conceptStep <= 2 ? '<div class="actions" style="margin-top:12px">' + button(state.conceptStep === 2 ? '完成挑戰' : '下一關', 'green', 'concept-continue') + '</div>' : '');
+      }
+
+      function answerConcept(key) {
+        var correct = ['total', 'divisor', 'quotient'][state.conceptStep];
+        var labels = ['被除數：代表全部有多少。', '除數：代表要分給幾人，或每一袋幾個。', '商：代表分完後的結果。'];
+        if (key === correct) {
+          state.conceptFeedback = { good: true, text: '答對了！' + labels[state.conceptStep] };
+          burstConfetti();
+        } else {
+          state.conceptFeedback = { good: false, text: '再想想：請回到故事裡找符合問題的數字。' };
+        }
+        render();
+      }
+
+      function continueConcept() {
+        state.conceptFeedback = null;
+        state.conceptStep += 1;
+        render();
+      }
+
+      function startPractice() {
+        state.screen = 'practice';
+        state.score = 0;
+        state.streak = 0;
+        nextPractice();
+      }
+
+      function nextPractice() {
+        var divisor = randomInt(2, 9);
+        var quotient = randomInt(2, 9);
+        state.practiceProblem = {
+          dividend: divisor * quotient,
+          divisor: divisor,
+          quotient: quotient
+        };
+        state.answer = '';
+        state.feedback = '';
+        render();
+      }
+
+      function renderPractice() {
+        var p = state.practiceProblem;
+        app.innerHTML = topbar('除法大挑戰', '用乘法反查也可以找到商', '練習模式') +
+          '<section class="workbench">' +
+          '<div class="score-row"><div class="badge">分數 ' + state.score + '</div><div class="badge">連對 ' + state.streak + '</div></div>' +
+          '<div class="panel">' +
+          '<div class="equation"><span class="operator" style="color:var(--ink)">' + p.dividend + '</span><span class="operator">÷</span><span class="operator" style="color:var(--ink)">' + p.divisor + '</span><span class="operator">=</span><span class="number-choice active">' + (state.answer || '?') + '</span></div>' +
+          (state.feedback === 'wrong' ? '<div class="feedback bad">小提示：想想看，哪個數 × ' + p.divisor + ' = ' + p.dividend + '？</div>' : '') +
+          (state.feedback === 'correct' ? '<div class="feedback good">答對了！準備下一題。</div>' : '') +
+          '<div class="keypad">' + keypadHtml() + '</div>' +
+          '</div></section>';
+      }
+
+      function keypadHtml() {
+        var html = '';
+        for (var i = 1; i <= 9; i += 1) {
+          html += button(String(i), 'ghost', 'num-' + i);
+        }
+        html += button('C', 'red', 'clear-answer');
+        html += button('0', 'ghost', 'num-0');
+        html += button('✓', 'green', 'check-answer');
+        return html;
+      }
+
+      function checkAnswer() {
+        if (Core.checkPracticeAnswer(state.practiceProblem, state.answer)) {
+          state.feedback = 'correct';
+          state.score += 10;
+          state.streak += 1;
+          burstConfetti();
+          render();
+          setTimeout(nextPractice, 900);
+        } else {
+          state.feedback = 'wrong';
+          state.streak = 0;
+          render();
+        }
+      }
+
+      function prepareCanvas(canvas) {
+        var rect = canvas.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        var ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx: ctx, width: rect.width, height: rect.height };
+      }
+
+      function drawVisualCanvas() {
+        var canvas = document.getElementById('mainCanvas');
+        if (!canvas) return;
+        var data = prepareCanvas(canvas);
+        var ctx = data.ctx;
+        var w = data.width;
+        var h = data.height;
+        var p = state.visualProblem;
+        var summary = Core.summarizeVisual(p, state.distributed);
+        ctx.clearRect(0, 0, w, h);
+        drawRounded(ctx, 16, 18, w - 32, h * 0.34, 18, state.selectedBatch ? '#fff1f1' : '#f8fafc', state.selectedBatch ? '#e5484d' : '#cbd5e1', 3);
+        drawLabel(ctx, '總數區：剩下 ' + summary.remaining + ' 個', 32, 42, '#475569');
+
+        sourceHitBox = { x: 24, y: 24, w: w - 48, h: h * 0.34 - 12 };
+        drawItemPile(ctx, p.itemEmoji, summary.remaining, 44, 76, w - 88, h * 0.23, summary.batchSize, state.selectedBatch);
+        drawArrow(ctx, w / 2 - 18, h * 0.39, w / 2 - 18, h * 0.48);
+
+        var cols = Math.min(p.groups, w < 700 ? 2 : 4);
+        var cardGap = 12;
+        var cardW = (w - 32 - (cols - 1) * cardGap) / cols;
+        var cardH = Math.max(112, (h * 0.45 - cardGap * Math.ceil(p.groups / cols)) / Math.ceil(p.groups / cols));
+        var startY = h * 0.51;
+        var counts = summary.groupCounts;
+        for (var i = 0; i < p.groups; i += 1) {
+          var row = Math.floor(i / cols);
+          var col = i % cols;
+          var x = 16 + col * (cardW + cardGap);
+          var y = startY + row * (cardH + cardGap);
+          var fill = p.type === 'sharing' ? '#eef5ff' : '#fff4e8';
+          var stroke = p.type === 'sharing' ? '#9bc4ff' : '#ffc08a';
+          drawRounded(ctx, x, y, cardW, cardH, 16, fill, stroke, 3);
+          drawLabel(ctx, p.type === 'sharing' ? '朋友 ' + (i + 1) : '第 ' + (i + 1) + ' 袋', x + 14, y + 28, p.type === 'sharing' ? '#1d5fbf' : '#b65f10');
+          drawItemPile(ctx, p.itemEmoji, counts[i], x + 16, y + 44, cardW - 32, cardH - 54, 0, false);
+          if (p.type === 'grouping' && counts[i] > 0) {
+            drawLabel(ctx, counts[i] + '/' + p.perGroup, x + cardW - 58, y + cardH - 14, '#b65f10');
+          }
+        }
+      }
+
+      function drawRemainderCanvas() {
+        var canvas = document.getElementById('mainCanvas');
+        if (!canvas) return;
+        var data = prepareCanvas(canvas);
+        var ctx = data.ctx;
+        var w = data.width;
+        var h = data.height;
+        var p = state.remainderProblem;
+        var status = Core.getRemainderStatus(p);
+        ctx.clearRect(0, 0, w, h);
+        var leftW = w * 0.48;
+        drawRounded(ctx, 16, 24, leftW - 24, h - 48, 18, status.canMakeBatch ? '#fff1f1' : '#ecfff7', status.canMakeBatch ? '#e5484d' : '#1fa971', 4);
+        drawRounded(ctx, leftW + 10, 24, w - leftW - 26, h - 48, 18, '#eef5ff', '#9bc4ff', 4);
+        drawLabel(ctx, '剩下的：' + status.remainder + ' 個', 34, 58, status.canMakeBatch ? '#a83236' : '#0e7550');
+        drawLabel(ctx, '裝好的袋子：' + p.currentQuotient + ' 袋', leftW + 28, 58, '#1d5fbf');
+        sourceHitBox = { x: 16, y: 24, w: leftW - 24, h: h - 48 };
+        drawItemPile(ctx, p.itemEmoji, status.remainder, 38, 92, leftW - 68, h - 138, p.divisor, state.selectedBatch && status.canMakeBatch);
+        drawArrow(ctx, leftW - 4, h / 2, leftW + 12, h / 2);
+        var bagCols = Math.max(2, Math.floor((w - leftW - 70) / 88));
+        for (var i = 0; i < p.currentQuotient; i += 1) {
+          var x = leftW + 32 + (i % bagCols) * 88;
+          var y = 90 + Math.floor(i / bagCols) * 96;
+          drawRounded(ctx, x, y, 70, 78, 14, '#fff', '#2f80ed', 2);
+          drawItemPile(ctx, p.itemEmoji, p.divisor, x + 10, y + 18, 50, 44, 0, false);
+          drawLabel(ctx, String(i + 1), x + 28, y + 70, '#1d5fbf');
+        }
+      }
+
+      function drawItemPile(ctx, item, count, x, y, w, h, highlightCount, selected) {
+        if (count <= 0) {
+          ctx.fillStyle = '#98a2b3';
+          ctx.font = '700 18px sans-serif';
+          ctx.fillText('沒有了', x + 8, y + 32);
+          return;
+        }
+        var size = Math.max(26, Math.min(42, Math.sqrt((w * h) / Math.max(count, 1)) * 0.72));
+        var cols = Math.max(1, Math.floor(w / size));
+        ctx.font = Math.floor(size * 0.82) + 'px sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        if (selected && highlightCount > 0) {
+          var rows = Math.ceil(Math.min(highlightCount, count) / cols);
+          drawRounded(ctx, x - 8, y - 8, Math.min(w, cols * size) + 16, rows * size + 16, 16, '#ffe1e2', '#e5484d', 3);
+        }
+        for (var i = 0; i < count; i += 1) {
+          var px = x + (i % cols) * size + size / 2;
+          var py = y + Math.floor(i / cols) * size + size / 2;
+          ctx.globalAlpha = highlightCount > 0 && i >= highlightCount ? 0.35 : 1;
+          ctx.fillText(item, px, py);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRounded(ctx, x, y, w, h, radius, fill, stroke, lineWidth) {
+        var r = Math.min(radius, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+      }
+
+      function drawLabel(ctx, text, x, y, color) {
+        ctx.fillStyle = color;
+        ctx.font = '800 18px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(text, x, y);
+      }
+
+      function drawArrow(ctx, x1, y1, x2, y2) {
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        ctx.strokeStyle = '#98a2b3';
+        ctx.fillStyle = '#98a2b3';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - 12 * Math.cos(angle - Math.PI / 6), y2 - 12 * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(x2 - 12 * Math.cos(angle + Math.PI / 6), y2 - 12 * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function burstConfetti() {
+        var canvas = confettiCanvas;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        var particles = [];
+        var colors = ['#f7c948', '#2f80ed', '#1fa971', '#ee5aa7', '#7c5cff'];
+        canvas.hidden = false;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        for (var i = 0; i < 90; i += 1) {
+          particles.push({
+            x: window.innerWidth / 2 + randomInt(-160, 160),
+            y: window.innerHeight * 0.22 + randomInt(-30, 30),
+            vx: (Math.random() - 0.5) * 7,
+            vy: Math.random() * -5 - 2,
+            size: randomInt(6, 12),
+            color: colors[randomInt(0, colors.length - 1)],
+            life: randomInt(48, 75)
+          });
+        }
+        cancelAnimationFrame(confettiFrame);
+        function tick() {
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          var alive = 0;
+          particles.forEach(function (p) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.22;
+            p.life -= 1;
+            if (p.life > 0) {
+              alive += 1;
+              ctx.fillStyle = p.color;
+              ctx.fillRect(p.x, p.y, p.size, p.size * 0.6);
+            }
+          });
+          if (alive > 0) {
+            confettiFrame = requestAnimationFrame(tick);
+          } else {
+            canvas.hidden = true;
+          }
+        }
+        tick();
+      }
+
+      app.addEventListener('click', function (event) {
+        var target = event.target.closest('[data-action]');
+        if (!target) return;
+        var action = target.getAttribute('data-action');
+        if (action === 'menu') {
+          state.screen = 'menu';
+          render();
+        } else if (action === 'sharing') {
+          startVisual('sharing');
+        } else if (action === 'grouping') {
+          startVisual('grouping');
+        } else if (action === 'magic-self') {
+          startSpecial('self');
+        } else if (action === 'magic-one') {
+          startSpecial('one');
+        } else if (action === 'visual-step') {
+          state.isAuto = false;
+          visualStep();
+        } else if (action === 'visual-auto') {
+          state.isAuto = true;
+          render();
+        } else if (action === 'visual-next') {
+          state.isSpecial ? startSpecial(state.specialKind) : startVisual(state.visualProblem.type);
+        } else if (action === 'remainder') {
+          startRemainder();
+        } else if (action === 'remainder-step') {
+          remainderStep();
+        } else if (action === 'remainder-next') {
+          startRemainder();
+        } else if (action === 'concept') {
+          startConcept();
+        } else if (action.indexOf('concept-') === 0 && action !== 'concept-continue' && action !== 'concept-next') {
+          answerConcept(action.replace('concept-', ''));
+        } else if (action === 'concept-continue') {
+          continueConcept();
+        } else if (action === 'concept-next') {
+          startConcept();
+        } else if (action === 'practice') {
+          startPractice();
+        } else if (action.indexOf('num-') === 0) {
+          state.answer = action.replace('num-', '');
+          state.feedback = '';
+          render();
+        } else if (action === 'clear-answer') {
+          state.answer = '';
+          state.feedback = '';
+          render();
+        } else if (action === 'check-answer') {
+          checkAnswer();
+        }
+      });
+
+      app.addEventListener('click', function (event) {
+        if (!event.target || event.target.id !== 'mainCanvas') return;
+        if (!sourceHitBox) return;
+        var rect = event.target.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var hit = x >= sourceHitBox.x && x <= sourceHitBox.x + sourceHitBox.w && y >= sourceHitBox.y && y <= sourceHitBox.y + sourceHitBox.h;
+        if (!hit) return;
+        if (state.screen === 'visual') {
+          state.isAuto = false;
+          visualStep();
+        }
+        if (state.screen === 'remainder') {
+          remainderStep();
+        }
+      });
+
+      window.addEventListener('resize', function () {
+        if (state.screen !== 'menu') render();
+        else drawHero();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
