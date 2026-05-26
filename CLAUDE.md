@@ -1,10 +1,10 @@
----
+﻿---
 project: unit7-game
 category: 學科工具集
-status: 穩定
-version: "子專案文件初始化 2026-05-26"
+status: 維護中
+version: "子專案文件與備份快照同步 2026-05-26"
 url: https://wukolo1206.github.io/unit7-game/
-next_action: 視需要檢查 GitHub Pages 導覽與各活動連結
+next_action: 需要時再整理本機題卷與暫存輸出，不混入功能提交
 updated: 2026-05-26
 ---
 
@@ -38,3 +38,4 @@ updated: 2026-05-26
 - 開啟 `https://wukolo1206.github.io/unit7-game/`。
 - 確認首頁連到 `mul.html`、`machine.html`、`inverse.html`、`unknown.html`。
 - `machine.html` 可切換倍數與正反向練習。
+
