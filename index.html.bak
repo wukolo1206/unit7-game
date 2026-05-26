@@ -83,27 +83,63 @@
       </div>
     </a>
 
-    <!-- 乘除互逆發現 -->
-    <a class="card" href="inverse.html">
-      <div class="card-top" style="background:linear-gradient(90deg,#2f9e44,#51cf66)"></div>
+    <!-- 找出□的數 -->
+    <a class="card" href="unknown.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#e64980,#f783ac)"></div>
       <div class="card-body">
-        <div class="seq">發現</div>
-        <div class="card-icon">🔍</div>
-        <div class="card-title">乘除互逆發現</div>
-        <div class="card-desc">同一批點，橫切看除法、直切看另一個除法。找出三個數字的規律。</div>
-        <div class="card-go" style="color:#2f9e44">開始 →</div>
+        <div class="seq">應用</div>
+        <div class="card-icon">🔢</div>
+        <div class="card-title">□ × 4 = 52</div>
+        <div class="card-desc">知道積和一個因數，用除法找出另一個。挑戰超過九九的大數！</div>
+        <div class="card-go" style="color:#e64980">開始 →</div>
       </div>
     </a>
 
-    <!-- 被乘數未知（coming soon） -->
-    <a class="card soon" href="#">
-      <div class="card-top" style="background:#ddd"></div>
+    <!-- 驗算 -->
+    <a class="card" href="verify.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#0ca678,#38d9a9)"></div>
       <div class="card-body">
-        <div class="seq">即將推出</div>
-        <div class="card-icon">🔒</div>
-        <div class="card-title">□ × 4 = 28</div>
-        <div class="card-desc">知道積和一個因數，找出另一個。乘除互逆的應用。</div>
-        <div class="card-go">即將推出</div>
+        <div class="seq">挑戰</div>
+        <div class="card-icon">✅</div>
+        <div class="card-title">驗算</div>
+        <div class="card-desc">別人的答案對不對？把答案代回去算算，用驗算來確認！</div>
+        <div class="card-go" style="color:#0ca678">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 應用題分析（乘法） -->
+    <a class="card" href="analyze.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#7c3aed,#a78bfa)"></div>
+      <div class="card-body">
+        <div class="seq">應用</div>
+        <div class="card-icon">📝</div>
+        <div class="card-title">乘法應用題分析</div>
+        <div class="card-desc">每次數量 × 重複次數 = 總共。找出三個角色，組出乘法算式！30 題。</div>
+        <div class="card-go" style="color:#7c3aed">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 除法應用題分析 -->
+    <a class="card" href="divide.html">
+      <div class="card-top" style="background:linear-gradient(90deg,#0c8599,#22b8cf)"></div>
+      <div class="card-body">
+        <div class="seq">應用</div>
+        <div class="card-icon">➗</div>
+        <div class="card-title">除法應用題分析</div>
+        <div class="card-desc">被除數 ÷ 除數 = 商。找出三個角色，弄清楚哪個是未知數！30 題。</div>
+        <div class="card-go" style="color:#0c8599">開始 →</div>
+      </div>
+    </a>
+
+    <!-- 快樂分分看 -->
+    <a class="card" href="happy-division/">
+      <div class="card-top" style="background:linear-gradient(90deg,#2563eb,#f59e0b)"></div>
+      <div class="card-body">
+        <div class="seq">觀念</div>
+        <div class="card-icon">🍪</div>
+        <div class="card-title">快樂分分看</div>
+        <div class="card-desc">用 Canvas 操作平分、分袋、餘數和算式名詞，從故事畫面理解除法。</div>
+        <div class="card-go" style="color:#2563eb">開始 →</div>
       </div>
     </a>
   </div>
