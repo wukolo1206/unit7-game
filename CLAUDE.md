@@ -29,7 +29,7 @@ updated: 2026-05-26
 
 ## 不能動的地方
 
-- `happy-division` 已獨立，不要再放回 `unit7-game/`。
+- `happy-division` 已獨立，不要再放回 `3下U07_乘法與除法_unit7-game/`。
 - 學習單與題目 XML/DOCX 檔是產出與參考資料，不要任意刪除。
 - `.bak` 檔是回復依據。
 
